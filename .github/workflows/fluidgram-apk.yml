@@ -1,7 +1,7 @@
 name: FluidGram Android APK (OnePlus 15)
 on:
   push:
-    branches: [fluidgram-android-v1-20261030]
+    branches: [main]
     paths:
       - 'fluidgram/**'
       - '.github/workflows/fluidgram-apk.yml'

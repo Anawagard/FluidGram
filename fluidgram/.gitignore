@@ -1,0 +1,6 @@
+*.apk
+*.jks
+*.keystore
+google-services.json
+local.properties
+__pycache__/

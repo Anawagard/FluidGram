@@ -1,0 +1,109 @@
+name: FluidGram Android APK (OnePlus 15)
+on:
+  push:
+    branches: [fluidgram-android-v1-20261030]
+    paths:
+      - 'fluidgram/**'
+      - '.github/workflows/fluidgram-apk.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s fluidgram/tests -v
+      - name: Confirm overlay applies to pinned Telegram without secrets
+        run: python fluidgram/scripts/check_upstream.py
+  android-apk:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      FLUIDGRAM_API_ID: ${{ secrets.FLUIDGRAM_API_ID }}
+      FLUIDGRAM_API_HASH: ${{ secrets.FLUIDGRAM_API_HASH }}
+      FLUIDGRAM_GOOGLE_SERVICES_JSON_B64: ${{ secrets.FLUIDGRAM_GOOGLE_SERVICES_JSON_B64 }}
+      FLUIDGRAM_KEYSTORE_B64: ${{ secrets.FLUIDGRAM_KEYSTORE_B64 }}
+      FLUIDGRAM_KEY_ALIAS: ${{ secrets.FLUIDGRAM_KEY_ALIAS }}
+      FLUIDGRAM_STORE_PASSWORD: ${{ secrets.FLUIDGRAM_STORE_PASSWORD }}
+      FLUIDGRAM_KEY_PASSWORD: ${{ secrets.FLUIDGRAM_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check prerequisites
+        id: gate
+        shell: bash
+        run: |
+          if [[ -n "$FLUIDGRAM_API_ID" && -n "$FLUIDGRAM_API_HASH" && -n "$FLUIDGRAM_GOOGLE_SERVICES_JSON_B64" && -n "$FLUIDGRAM_KEYSTORE_B64" && -n "$FLUIDGRAM_KEY_ALIAS" && -n "$FLUIDGRAM_STORE_PASSWORD" && -n "$FLUIDGRAM_KEY_PASSWORD" ]]; then
+            echo 'enabled=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'enabled=false' >> "$GITHUB_OUTPUT"
+            echo 'APK NOT BUILT: configure all seven FLUIDGRAM_* GitHub Secrets first.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/setup-java@v4
+        if: steps.gate.outputs.enabled == 'true'
+        with: {distribution: temurin, java-version: '17'}
+      - uses: android-actions/setup-android@v3
+        if: steps.gate.outputs.enabled == 'true'
+      - name: Install SDK/NDK
+        if: steps.gate.outputs.enabled == 'true'
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'ndk;27.2.12479018' 'cmake;3.22.1'
+      - name: Clone pinned official Telegram
+        if: steps.gate.outputs.enabled == 'true'
+        run: |
+          git init Telegram
+          git -C Telegram remote add origin https://github.com/DrKLO/Telegram.git
+          git -C Telegram fetch --depth 1 origin 3de37c8cfb039452be7398909461da6288babf15
+          git -C Telegram checkout --detach FETCH_HEAD
+          git -C Telegram submodule update --init --recursive --depth=1
+      - name: Patch source and restore private build inputs
+        if: steps.gate.outputs.enabled == 'true'
+        run: |
+          python3 fluidgram/scripts/apply_fluidgram.py --telegram Telegram
+          python3 - <<'PYCODE'
+          import base64, os, pathlib, re
+          root=pathlib.Path('Telegram')
+          firebase=base64.b64decode(os.environ['FLUIDGRAM_GOOGLE_SERVICES_JSON_B64'], validate=True)
+          for name in ('TMessagesProj_AppStandalone/google-services.json','TMessagesProj/google-services.json'):
+              (root/name).write_bytes(firebase)
+          (root/'TMessagesProj/config/release.keystore').write_bytes(
+              base64.b64decode(os.environ['FLUIDGRAM_KEYSTORE_B64'], validate=True))
+          p=root/'gradle.properties'
+          contents=p.read_text()
+          for prop, env in [('RELEASE_KEY_ALIAS','FLUIDGRAM_KEY_ALIAS'),
+                            ('RELEASE_STORE_PASSWORD','FLUIDGRAM_STORE_PASSWORD'),
+                            ('RELEASE_KEY_PASSWORD','FLUIDGRAM_KEY_PASSWORD')]:
+              value=os.environ[env]
+              if '\n' in value or '\r' in value: raise ValueError('Invalid signing input')
+              contents,n=re.subn(r'(?m)^'+prop+r'=.*$', lambda _:prop+'='+value, contents)
+              if n != 1: raise RuntimeError('Missing property '+prop)
+          p.write_text(contents)
+          PYCODE
+      - name: Assemble signed APK
+        if: steps.gate.outputs.enabled == 'true'
+        working-directory: Telegram
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon :TMessagesProj_AppStandalone:assembleAfatStandalone
+      - name: Record APK checksum
+        if: steps.gate.outputs.enabled == 'true'
+        run: sha256sum Telegram/TMessagesProj_AppStandalone/build/outputs/apk/afat/standalone/*.apk > FluidGram-APK-SHA256.txt
+      - name: Upload APK
+        if: steps.gate.outputs.enabled == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: FluidGram-OnePlus15-alpha2
+          path: |
+            Telegram/TMessagesProj_AppStandalone/build/outputs/apk/afat/standalone/*.apk
+            FluidGram-APK-SHA256.txt
+          if-no-files-found: error
+          retention-days: 14

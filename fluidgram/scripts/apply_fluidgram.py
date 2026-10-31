@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Apply FluidGram v0.2 overlay to pinned Telegram Android checkout."""
+"""Apply FluidGram v0.3 FluidGlass overlay to pinned Telegram Android checkout."""
 import argparse
 import os
 import re
@@ -7,21 +7,7 @@ from pathlib import Path
 
 PACKAGE = "dev.fluidgram.oneplus15"
 UPSTREAM_SHA = "3de37c8cfb039452be7398909461da6288babf15"
-MOTION_CLASS = """/* FluidGram. GPL-2.0-or-later. */
-package org.telegram.ui.Components;
-
-import android.view.animation.Interpolator;
-import android.view.animation.PathInterpolator;
-
-/** Motion curve. Android ValueAnimator honours system animation scale. */
-public final class FluidMotion {
-    private FluidMotion() {}
-    public static long cameraFlipDurationMillis() { return 440L; }
-    public static Interpolator cameraFlipInterpolator() {
-        return new PathInterpolator(0.18f, 0.00f, 0.16f, 1.00f);
-    }
-}
-"""
+MOTION_CLASS = "/* GPL-2.0-or-later. FluidGram v0.3 */\npackage org.telegram.ui.Components;\nimport android.media.MediaCodec;\nimport android.media.MediaCodecInfo;\nimport android.view.animation.Interpolator;\nimport android.view.animation.PathInterpolator;\npublic final class FluidMotion {\n    private FluidMotion() {}\n    public static long cameraFlipDurationMillis() { return 330L; }\n    public static Interpolator cameraFlipInterpolator() {\n        return new PathInterpolator(0.20f, 0f, 0.15f, 1.00f);\n    }\n    public static int videoEncoderFrameRate(MediaCodec encoder, String mime, int width, int height) {\n        if (encoder == null || width <= 0 || height <= 0) return 30;\n        try {\n            MediaCodecInfo.CodecCapabilities caps = encoder.getCodecInfo().getCapabilitiesForType(mime);\n            if (caps != null && caps.getVideoCapabilities() != null\n                    && caps.getVideoCapabilities().areSizeAndRateSupported(width, height, 60.0)) return 60;\n        } catch (Exception ignored) {}\n        return 30;\n    }\n}\n"
 ICON = """<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp"
@@ -34,7 +20,7 @@ ICON = """<?xml version="1.0" encoding="utf-8"?>
 </vector>
 """
 
-FPS_CLASS = "/* FluidGram camera support. GPL-2.0-or-later. */\npackage org.telegram.messenger.camera;\nimport android.util.Range;\n/** Never set an unadvertised Camera2 frame-rate range. */\npublic final class FluidCameraFps {\n    private FluidCameraFps() {}\n    public static Range<Integer> choose(Range<Integer>[] advertised) {\n        if (advertised == null || advertised.length == 0) return null;\n        Range<Integer> best30 = null;\n        Range<Integer> closest = null;\n        for (Range<Integer> range : advertised) {\n            if (range == null) continue;\n            int low = range.getLower(), high = range.getUpper();\n            if (low <= 0 || high < low) continue;\n            if (low == 30 && high == 30) return range;\n            if (low <= 30 && high >= 30 && (best30 == null ||\n                    high - low < best30.getUpper() - best30.getLower())) best30 = range;\n            if (closest == null ||\n                    Math.abs(high - 30) < Math.abs(closest.getUpper() - 30)) closest = range;\n        }\n        return best30 != null ? best30 : closest;\n    }\n}\n"
+FPS_CLASS = "/* GPL-2.0-or-later. FluidGram v0.3 */\npackage org.telegram.messenger.camera;\nimport android.util.Range;\n/** Prefer an advertised 60fps camera AE range, otherwise a 30fps fallback. */\npublic final class FluidCameraFps {\n    private FluidCameraFps() {}\n    public static Range<Integer> choose(Range<Integer>[] advertised) {\n        if (advertised == null || advertised.length == 0) return null;\n        Range<Integer> best60 = null, best30 = null, closest = null;\n        for (Range<Integer> range : advertised) {\n            if (range == null) continue;\n            int low = range.getLower(), high = range.getUpper();\n            if (low <= 0 || high < low) continue;\n            if (low == 60 && high == 60) return range;\n            if (low <= 60 && high >= 60 &&\n                    (best60 == null || low > best60.getLower() ||\n                    low == best60.getLower() && high < best60.getUpper())) best60 = range;\n            if (low <= 30 && high >= 30 &&\n                    (best30 == null || high-low < best30.getUpper()-best30.getLower())) best30 = range;\n            if (closest == null || Math.abs(high-30) < Math.abs(closest.getUpper()-30)) closest = range;\n        }\n        return best60 != null ? best60 : best30 != null ? best30 : closest;\n    }\n}\n"
 THEME_CHANGES = {
     "public static final int TELEGRAM_COLOR = 0xFF229AF0;": "public static final int TELEGRAM_COLOR = 0xFF16A6A2;",
     "public static final int TELEGRAM_COLOR_TEXT = 0xFF298ACF;": "public static final int TELEGRAM_COLOR_TEXT = 0xFF087C85;",
@@ -45,6 +31,39 @@ THEME_CHANGES = {
     "defaultColors[key_chat_outBubbleSelected] = 0xffd9f7c5;": "defaultColors[key_chat_outBubbleSelected] = 0xffCAEEE9;",
     "defaultColors[key_chat_outMediaIcon] = 0xffefffde;": "defaultColors[key_chat_outMediaIcon] = 0xffDDF7F4;",
     "defaultColors[key_chat_outMediaIconSelected] = 0xffe1f8cf;": "defaultColors[key_chat_outMediaIconSelected] = 0xffCAEEE9;"
+}
+
+FLUIDGLASS_COLORS = {
+    "actionBarDefault": "#ff0e1929",
+    "actionBarDefaultTitle": "#fff0faff",
+    "actionBarDefaultSubtitle": "#ff9fb2c6",
+    "actionBarDefaultIcon": "#ffe1f4ff",
+    "actionBarDefaultSubmenuBackground": "#ff17263a",
+    "windowBackgroundWhite": "#ff101c2b",
+    "windowBackgroundGray": "#ff0a1422",
+    "windowBackgroundWhiteBlackText": "#fff0f6ff",
+    "windowBackgroundWhiteGrayText": "#ffa5b8c8",
+    "windowBackgroundWhiteBlueText": "#ff4de6d4",
+    "windowBackgroundWhiteBlueButton": "#ff35d9cc",
+    "dialogBackground": "#ff172538",
+    "dialogSearchBackground": "#ff1c3043",
+    "chats_name": "#fff0faff",
+    "chats_message": "#ffa2b4c8",
+    "chats_date": "#ff8d9fb5",
+    "chats_unreadCounter": "#ff2ccfc0",
+    "chats_unreadCounterMuted": "#ff45566c",
+    "chats_menuBackground": "#ff102034",
+    "chats_actionBackground": "#ff2cdac7",
+    "chat_inBubble": "#ff1b2c40",
+    "chat_outBubble": "#ff1c4951",
+    "chat_inBubbleSelected": "#ff2b4059",
+    "chat_outBubbleSelected": "#ff255966",
+    "chat_messageTextIn": "#fff3f8ff",
+    "chat_messageTextOut": "#fff3f8ff",
+    "chat_messagePanelBackground": "#ff101e30",
+    "chat_outTimeText": "#ffc3d6e2",
+    "chat_outSentCheck": "#ff62f3dc",
+    "chat_wallpaper": "#ff0b1524"
 }
 
 def replace_exact(source, old, new, path):
@@ -69,7 +88,10 @@ def apply(root, api_id, api_hash):
     if not re.fullmatch(r"[0-9a-fA-F]{32}", api_hash):
         raise ValueError("Missing or invalid FLUIDGRAM_API_HASH")
     props = root / "gradle.properties"
-    rewrite(props, lambda s: replace_exact(s, "APP_PACKAGE=org.telegram.messenger", "APP_PACKAGE=" + PACKAGE, props))
+    def patch_properties(s):
+        s = replace_exact(s, "APP_PACKAGE=org.telegram.messenger", "APP_PACKAGE=" + PACKAGE, props)
+        return replace_exact(s, "APP_VERSION_CODE=7237", "APP_VERSION_CODE=7238", props)
+    rewrite(props, patch_properties)
 
     buildvars = root / "TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java"
     def patch_vars(s):
@@ -87,7 +109,7 @@ def apply(root, api_id, api_hash):
                 return;
             }
             final long fluidNow = SystemClock.uptimeMillis();
-            if (fluidNow - lastFluidSwitchUptime < 560L) {
+            if (fluidNow - lastFluidSwitchUptime < 390L) {
                 return;
             }
             lastFluidSwitchUptime = fluidNow;"""
@@ -99,8 +121,10 @@ def apply(root, api_id, api_hash):
             }""", guard, camera)
         s = replace_exact(s, "            valueAnimator.setDuration(580);",
                           "            valueAnimator.setDuration(FluidMotion.cameraFlipDurationMillis());", camera)
-        return replace_exact(s, "            valueAnimator.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);",
-                             "            valueAnimator.setInterpolator(FluidMotion.cameraFlipInterpolator());", camera)
+        s = replace_exact(s, "            valueAnimator.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);",
+                          "            valueAnimator.setInterpolator(FluidMotion.cameraFlipInterpolator());", camera)
+        return replace_exact(s, "                format.setInteger(MediaFormat.KEY_FRAME_RATE, FRAME_RATE);",
+                          "                format.setInteger(MediaFormat.KEY_FRAME_RATE, FluidMotion.videoEncoderFrameRate(videoEncoder, VIDEO_MIME_TYPE, videoWidth, videoHeight));", camera)
     rewrite(camera, patch_camera)
     motion = camera.parent / "FluidMotion.java"
     if motion.exists(): raise RuntimeError("FluidMotion exists already; apply only once")
@@ -127,6 +151,33 @@ def apply(root, api_id, api_hash):
             s = replace_exact(s, before, after, palette)
         return s
     rewrite(palette, patch_palette)
+
+
+    # Repaint Telegram's shipped dark theme, preserving a fully defined
+    # contrast-safe palette instead of trying to darken light defaults.
+    dark_asset = root / "TMessagesProj/src/main/assets/darkblue.attheme"
+    def patch_dark_asset(s):
+        for key, color in FLUIDGLASS_COLORS.items():
+            pattern = r"(?m)^" + re.escape(key) + r"=[^\\n\\r]*$"
+            s, count = re.subn(pattern, key + "=" + color, s)
+            if count != 1: raise RuntimeError(f"Dark theme key {key}: {count} matches")
+        return s
+    rewrite(dark_asset, patch_dark_asset)
+    theme_java = root / "TMessagesProj/src/main/java/org/telegram/ui/ActionBar/Theme.java"
+    def patch_theme_java(s):
+        if s.count('"Dark Blue"') < 4:
+            raise RuntimeError("Unexpected built-in dark theme reference count")
+        s = s.replace('"Dark Blue"', '"FluidGlass Dark"')
+        anchor = '            String theme = preferences.getString("theme", null);'
+        migration = '''            // Select FluidGlass once; subsequent manual theme changes are retained.
+            if (!themeConfig.getBoolean("fluidglass_v03_applied", false)) {
+                preferences.edit().putString("theme", "FluidGlass Dark")
+                        .putInt("selectedAutoNightType", AUTO_NIGHT_TYPE_NONE).apply();
+                themeConfig.edit().putBoolean("fluidglass_v03_applied", true).apply();
+            }
+'''
+        return replace_exact(s, anchor, migration + anchor, theme_java)
+    rewrite(theme_java, patch_theme_java)
 
     # Firebase Google Services must run on the application module only.
     # Its Android library module retains the upstream namespace, not our app ID.
@@ -158,10 +209,10 @@ def apply(root, api_id, api_hash):
         head, rest = s.split(start_tag, 1)
         section, tail = rest.split("</style>", 1)
         section = replace_exact(section, '<item name="android:windowBackground">@android:color/white</item>',
-                                '<item name="android:windowBackground">#F4F8FC</item>', styles)
+                                '<item name="android:windowBackground">#0B1524</item>', styles)
         return head + start_tag + section + "</style>" + tail
     rewrite(styles, patch_styles)
-    print("FluidGram v0.2 applied. Install package: " + PACKAGE + ".web")
+    print("FluidGram v0.3 FluidGlass applied. Install package: " + PACKAGE + ".web")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

@@ -128,6 +128,14 @@ def apply(root, api_id, api_hash):
         return s
     rewrite(palette, patch_palette)
 
+    # Firebase Google Services must run on the application module only.
+    # Its Android library module retains the upstream namespace, not our app ID.
+    library_gradle = root / "TMessagesProj/build.gradle"
+    rewrite(library_gradle, lambda s: replace_exact(
+        s, "apply plugin: 'com.google.gms.google-services'",
+        "// FluidGram: google-services plugin is applied by AppStandalone only",
+        library_gradle))
+
     strings = root / "TMessagesProj/src/main/res/values/strings.xml"
     def patch_strings(s):
         s = replace_exact(s, '<string name="AppName">Telegram</string>',

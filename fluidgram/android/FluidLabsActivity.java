@@ -114,7 +114,7 @@ public final class FluidLabsActivity extends Activity {
                      Math.round(FluidRefresh.maxSupportedHz(this)) + " Гц доступно",
              "Значения сообщает Android, не обещание стабильных 165 FPS.", null);
         section("ОСОБЕННОСТИ  /  LIVE");
-        toggle("VSync HUD", "Показывать частоту кадровых импульсов Android в плавающей капсуле. Не равно реальному FPS видео.",
+        toggle("VSync HUD", "Отладка кадровых импульсов. Дополнительные кадры HUD увеличивают нагрузку; в обычном режиме лучше выключить.",
                "show_vsync", false);
         toggle("Экран без сна", "Не выключать экран, пока FluidGram открыт. Может повышать расход энергии.",
                "keep_screen_on", false);

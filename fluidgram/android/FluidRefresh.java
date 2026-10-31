@@ -59,7 +59,7 @@ public final class FluidRefresh {
         if (a == null) return;
         Window window = a.getWindow();
         SharedPreferences p = prefs(a);
-        int setting = p.getInt("refresh_mode", 1);
+        int setting = p.getInt("refresh_mode", 4);
         float highest = maxSupportedHz(a);
         if (setting == 3 && batteryPercent(a) <= 25) setting = 0;
         WindowManager.LayoutParams lp = window.getAttributes();
@@ -137,7 +137,7 @@ public final class FluidRefresh {
     public static String diagnostic(Activity a) {
         Display d = a.getWindowManager().getDefaultDisplay();
         StringBuilder b = new StringBuilder();
-        b.append("FluidGram v0.6; ColorOS controls final refresh rate\n");
+        b.append("FluidGram v0.7; ColorOS controls final refresh rate\n");
         b.append("Device: ").append(android.os.Build.MANUFACTURER).append(" ")
                 .append(android.os.Build.MODEL).append("\n");
         b.append("ColorOS/Android reported Hz: ").append(d.getRefreshRate()).append("\n");

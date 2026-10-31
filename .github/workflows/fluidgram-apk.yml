@@ -103,7 +103,7 @@ jobs:
         if: steps.gate.outputs.enabled == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: FluidGram-OnePlus15-v06-Adaptive-165Hz
+          name: FluidGram-OnePlus15-v07-Glass-Labs
           path: |
             Telegram/TMessagesProj_AppStandalone/build/outputs/apk/afat/standalone/*.apk
             FluidGram-APK-SHA256.txt

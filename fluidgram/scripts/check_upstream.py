@@ -54,7 +54,11 @@ def verify():
         assert "FluidRefresh.pause(this)" in launcher
         assert 'android:name="org.telegram.ui.FluidLabsActivity"' in manifest
         assert 'android:exported="false"' in manifest
-        assert "VSync HUD" in labs and "Neon Glass" in labs
+        assert "VSync HUD" in labs and "Glass highlights" in labs
+        assert "FluidGlass.surface(this, true)" in labs
+        assert "FluidGlass.setAmbientBlur(glassBackdrop, false)" in labs
+        glass = (root / "TMessagesProj/src/main/java/org/telegram/ui/FluidGlass.java").read_text(encoding="utf8")
+        assert "RenderEffect.createBlurEffect" in glass
         assert "ColorOS · Автоматически" in labs
         assert "preferredRefreshRate = 0f" in refresh
         assert "getSupportedModes()" in refresh
@@ -75,7 +79,7 @@ def verify():
         assert "CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES" in fps
         assert "0xffDDF7F4" in palette
         assert f"APP_PACKAGE={PACKAGE}" in props
-        assert "APP_VERSION_CODE=7241" in props
+        assert "APP_VERSION_CODE=7242" in props
         assert "FluidGram (unofficial)" in (root / "TMessagesProj/src/main/res/values/strings.xml").read_text(encoding="utf8")
         print("OK: applied to pinned source; no APK compiled, no private credentials")
 

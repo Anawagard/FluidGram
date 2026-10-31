@@ -29,9 +29,9 @@ def verify():
                 dest.write_bytes(response.read())
         (root / "TMessagesProj/src/main/res/drawable").mkdir(parents=True, exist_ok=True)
         apply(root, "123456", "0" * 32)  # invalid, not for login or distribution
-        camera = (root / FILES[2]).read_text(encoding="utf8")
-        fps = (root / FILES[3]).read_text(encoding="utf8")
-        palette = (root / FILES[4]).read_text(encoding="utf8")
+        camera = (root / "TMessagesProj/src/main/java/org/telegram/ui/Components/InstantCameraView.java").read_text(encoding="utf8")
+        fps = (root / "TMessagesProj/src/main/java/org/telegram/messenger/camera/Camera2Session.java").read_text(encoding="utf8")
+        palette = (root / "TMessagesProj/src/main/java/org/telegram/ui/ActionBar/ThemeColors.java").read_text(encoding="utf8")
         props = (root / FILES[0]).read_text(encoding="utf8")
         assert "google-services plugin is applied by AppStandalone only" in (root / "TMessagesProj/build.gradle").read_text(encoding="utf8")
         assert "flipAnimationInProgress)" in camera
@@ -40,7 +40,7 @@ def verify():
         assert "CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES" in fps
         assert "0xffDDF7F4" in palette
         assert f"APP_PACKAGE={PACKAGE}" in props
-        assert "FluidGram (unofficial)" in (root / FILES[5]).read_text(encoding="utf8")
+        assert "FluidGram (unofficial)" in (root / "TMessagesProj/src/main/res/values/strings.xml").read_text(encoding="utf8")
         print("OK: applied to pinned source; no APK compiled, no private credentials")
 
 if __name__ == "__main__":

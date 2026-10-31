@@ -96,7 +96,7 @@ public final class FluidLabsActivity extends Activity {
         root.addView(hero, margins(24));
 
         section("ЭКРАН  /  165 Гц");
-        int mode = preferences.getInt("refresh_mode", 0);
+        int mode = preferences.getInt("refresh_mode", 1);
         card("Частота обновления", MODE_NAMES[Math.max(0, Math.min(mode, 3))],
             "ColorOS может отклонить запрос приложения.", () -> {
                 new AlertDialog.Builder(this).setTitle("Частота обновления")

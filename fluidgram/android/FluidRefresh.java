@@ -51,7 +51,7 @@ public final class FluidRefresh {
         if (a == null) return;
         Window window = a.getWindow();
         SharedPreferences p = prefs(a);
-        int setting = p.getInt("refresh_mode", 0);
+        int setting = p.getInt("refresh_mode", 1);
         float highest = maxSupportedHz(a);
         if (setting == 3 && batteryPercent(a) <= 25) setting = 0;
         WindowManager.LayoutParams lp = window.getAttributes();

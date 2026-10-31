@@ -17,3 +17,5 @@ The OS decides actual panel refresh; if ColorOS auto is capped to 90Hz by firmwa
 v0.4 camera recovery and 60/LIGHT modes retained. Upgrades via versionCode 7241, same application ID `dev.fluidgram.oneplus15.web`, same signing keystore. GitHub Actions artifact `FluidGram-OnePlus15-v05-Labs-165Hz`.
 
 GPL-2.0-or-later, based on official Telegram `3de37c8cfb039452be7398909461da6288babf15`. Never distribute binaries signed with test-only API credentials. Android API reference: https://developer.android.com/reference/android/view/WindowManager.LayoutParams.
+
+The fresh-install default is **Adaptive+**: requests a higher app refresh when ColorOS is in system Auto mode, while keeping the final decision with the OS. Choose ColorOS Auto in Labs to opt out of this request.\n

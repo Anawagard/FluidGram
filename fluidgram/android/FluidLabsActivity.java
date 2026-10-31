@@ -14,6 +14,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Display;
 import android.widget.ScrollView;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Switch;
@@ -23,10 +24,11 @@ import android.view.HapticFeedbackConstants;
 /** FluidGram Labs — standalone, theme-independent experimental control center. */
 public final class FluidLabsActivity extends Activity {
     private LinearLayout root;
+    private FluidGlass.Backdrop glassBackdrop;
     private SharedPreferences preferences;
     private boolean neon;
-    private static final int BG = 0xFF0B1728;
-    private static final int ACCENT = 0xFF55E8D7;
+    private static final int BG = 0xFF050A11;
+    private static final int ACCENT = 0xFFE2F9FF;
     private static final String[] MODE_NAMES = {
         "ColorOS · Автоматически", "Adaptive+ · Высокая плавность",
         "Максимум · до 165 Гц", "Умный · экономия при 25%",
@@ -51,8 +53,10 @@ public final class FluidLabsActivity extends Activity {
     @Override protected void onResume() {
         super.onResume();
         FluidRefresh.resume(this);
+        if (glassBackdrop != null) FluidGlass.setAmbientBlur(glassBackdrop, true);
     }
     @Override protected void onPause() {
+        if (glassBackdrop != null) FluidGlass.setAmbientBlur(glassBackdrop, false);
         FluidRefresh.pause(this);
         super.onPause();
     }
@@ -73,12 +77,18 @@ public final class FluidLabsActivity extends Activity {
         neon = preferences.getBoolean("neon_labs", true);
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
-        scroll.setBackgroundColor(BG);
+        scroll.setBackgroundColor(Color.TRANSPARENT);
         root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setPadding(dp(18), dp(22), dp(18), dp(38));
         scroll.addView(root);
-        setContentView(scroll);
+        FrameLayout scene = new FrameLayout(this);
+        scene.setBackgroundColor(BG);
+        glassBackdrop = new FluidGlass.Backdrop(this);
+        scene.addView(glassBackdrop, new FrameLayout.LayoutParams(-1, -1));
+        FluidGlass.setAmbientBlur(glassBackdrop, true);
+        scene.addView(scroll, new FrameLayout.LayoutParams(-1, -1));
+        setContentView(scene);
         TextView back = text("‹   НАЗАД К НАСТРОЙКАМ", 13, ACCENT, true);
         back.setPadding(dp(8), dp(8), dp(8), dp(20));
         back.setOnClickListener(v -> finish());
@@ -86,13 +96,13 @@ public final class FluidLabsActivity extends Activity {
         LinearLayout hero = new LinearLayout(this);
         hero.setOrientation(LinearLayout.VERTICAL);
         hero.setPadding(dp(21), dp(22), dp(21), dp(23));
-        hero.setBackground(background(neon ? 0xFF12635F : 0xFF1E3D57,
-                0xFF12263C, 26, true));
-        TextView eyebrow = text("FLUIDGRAM  /  LABS  0.6", 12, 0xFFB6FFEE, true);
+        hero.setBackground(FluidGlass.surface(this, true));
+        hero.setElevation(dp(8));
+        TextView eyebrow = text("FLUIDGRAM  /  GLASS LABS  0.7", 12, 0xFFB6FFEE, true);
         hero.addView(eyebrow, margins(9));
-        TextView headline = text("Свой Telegram.\nСвои правила.", 27, Color.WHITE, true);
+        TextView headline = text("Живое стекло.\nТвой Telegram.", 27, Color.WHITE, true);
         hero.addView(headline, margins(10));
-        TextView desc = text("Плавность, визуальные эффекты и приватные настройки для OnePlus 15.", 14, 0xFFC6DBE7, false);
+        TextView desc = text("Стеклянные слои, световые отражения и плавность с контролем расхода энергии.", 14, 0xFFC6DBE7, false);
         hero.addView(desc);
         root.addView(hero, margins(24));
 
@@ -118,7 +128,7 @@ public final class FluidLabsActivity extends Activity {
                "show_vsync", false);
         toggle("Экран без сна", "Не выключать экран, пока FluidGram открыт. Может повышать расход энергии.",
                "keep_screen_on", false);
-        toggle("Neon Glass", "Бирюзовые стеклянные карточки и контрастная панель FluidGram Labs.",
+        toggle("Glass highlights", "Световые отражения и контрастная подсветка стеклянных элементов.",
                "neon_labs", true);
         toggle("Тактильное переключение", "Короткий виброотклик при смене камеры видеокружка.",
                "camera_haptic", true);
@@ -143,7 +153,8 @@ public final class FluidLabsActivity extends Activity {
         LinearLayout panel = new LinearLayout(this);
         panel.setOrientation(LinearLayout.VERTICAL);
         panel.setPadding(dp(17), dp(16), dp(17), dp(16));
-        panel.setBackground(background(0xFF1B3046, neon ? 0xFF122D37 : 0xFF14253A, 20, true));
+        panel.setBackground(FluidGlass.surface(this, false));
+        panel.setElevation(dp(5));
         panel.addView(text(heading, 17, Color.WHITE, true), margins(5));
         panel.addView(text(value, 14, ACCENT, true), margins(6));
         panel.addView(text(description, 12, 0xFFA9BECD, false));
@@ -160,7 +171,8 @@ public final class FluidLabsActivity extends Activity {
         LinearLayout panel = new LinearLayout(this);
         panel.setGravity(Gravity.CENTER_VERTICAL);
         panel.setPadding(dp(15), dp(13), dp(13), dp(13));
-        panel.setBackground(background(0xFF1B3046, 0xFF112B34, 20, true));
+        panel.setBackground(FluidGlass.surface(this, false));
+        panel.setElevation(dp(5));
         LinearLayout labels = new LinearLayout(this);
         labels.setOrientation(LinearLayout.VERTICAL);
         labels.addView(text(name, 16, Color.WHITE, true), margins(5));

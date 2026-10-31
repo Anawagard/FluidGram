@@ -27,7 +27,9 @@ public final class FluidGlass {
 
     public static Drawable surface(Context context, boolean prominent) {
         float density = context.getResources().getDisplayMetrics().density;
-        Drawable panel = new Panel(density, prominent);
+        boolean highlights = context.getSharedPreferences("fluidgram_labs", Context.MODE_PRIVATE)
+                .getBoolean("neon_labs", true);
+        Drawable panel = new Panel(density, prominent, highlights);
         return new RippleDrawable(ColorStateList.valueOf(0x33FFFFFF), panel, null);
     }
 
@@ -71,10 +73,12 @@ public final class FluidGlass {
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final float density;
         private final boolean prominent;
+        private final boolean highlights;
         private int alpha = 255;
-        Panel(float density, boolean prominent) {
+        Panel(float density, boolean prominent, boolean highlights) {
             this.density = density;
             this.prominent = prominent;
+            this.highlights = highlights;
         }
         @Override public void draw(Canvas canvas) {
             android.graphics.Rect b = getBounds();
@@ -96,14 +100,16 @@ public final class FluidGlass {
             paint.setStyle(Paint.Style.STROKE);
             paint.setStrokeWidth(Math.max(1f, density));
             paint.setShader(new LinearGradient(x, y, rect.right, rect.bottom,
-                    new int[]{0xD9FFFFFF, 0x75E4F5FF, 0x1BFFFFFF, 0x65B2D4E5},
+                    highlights ? new int[]{0xD9FFFFFF, 0x75E4F5FF, 0x1BFFFFFF, 0x65B2D4E5}
+                               : new int[]{0x70FFFFFF, 0x3EE4F5FF, 0x0BFFFFFF, 0x306080A0},
                     null, Shader.TileMode.CLAMP));
             RectF inset = new RectF(rect);
             inset.inset(density * .5f, density * .5f);
             canvas.drawRoundRect(inset, radius, radius, paint);
             paint.setStyle(Paint.Style.FILL);
             paint.setShader(new LinearGradient(0, y, 0, y + Math.max(1f, h * .42f),
-                    new int[]{0x60FFFFFF, 0x0CFFFFFF, 0x00FFFFFF},
+                    highlights ? new int[]{0x60FFFFFF, 0x0CFFFFFF, 0x00FFFFFF}
+                               : new int[]{0x18FFFFFF, 0x04FFFFFF, 0x00FFFFFF},
                     null, Shader.TileMode.CLAMP));
             Path glint = new Path();
             glint.moveTo(x + radius, y + density * 2f);

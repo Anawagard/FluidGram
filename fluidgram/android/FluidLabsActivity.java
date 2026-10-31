@@ -53,12 +53,17 @@ public final class FluidLabsActivity extends Activity {
     @Override protected void onResume() {
         super.onResume();
         FluidRefresh.resume(this);
-        if (glassBackdrop != null) FluidGlass.setAmbientBlur(glassBackdrop, true);
+        if (glassBackdrop != null) FluidGlass.setAmbientBlur(glassBackdrop, allowGlassBlur());
     }
     @Override protected void onPause() {
         if (glassBackdrop != null) FluidGlass.setAmbientBlur(glassBackdrop, false);
         FluidRefresh.pause(this);
         super.onPause();
+    }
+    private boolean allowGlassBlur() {
+        android.os.PowerManager power = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
+        return FluidRefresh.batteryPercent(this) > 20
+                && (power == null || !power.isPowerSaveMode());
     }
     private TextView text(String content, int sp, int color, boolean bold) {
         TextView v = new TextView(this);
@@ -86,7 +91,7 @@ public final class FluidLabsActivity extends Activity {
         scene.setBackgroundColor(BG);
         glassBackdrop = new FluidGlass.Backdrop(this);
         scene.addView(glassBackdrop, new FrameLayout.LayoutParams(-1, -1));
-        FluidGlass.setAmbientBlur(glassBackdrop, true);
+        FluidGlass.setAmbientBlur(glassBackdrop, allowGlassBlur());
         scene.addView(scroll, new FrameLayout.LayoutParams(-1, -1));
         setContentView(scene);
         TextView back = text("‹   НАЗАД К НАСТРОЙКАМ", 13, ACCENT, true);

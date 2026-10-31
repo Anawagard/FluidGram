@@ -90,7 +90,7 @@ def apply(root, api_id, api_hash):
     props = root / "gradle.properties"
     def patch_properties(s):
         s = replace_exact(s, "APP_PACKAGE=org.telegram.messenger", "APP_PACKAGE=" + PACKAGE, props)
-        return replace_exact(s, "APP_VERSION_CODE=7237", "APP_VERSION_CODE=7238", props)
+        return replace_exact(s, "APP_VERSION_CODE=7237", "APP_VERSION_CODE=7239", props)
     rewrite(props, patch_properties)
 
     buildvars = root / "TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java"
@@ -168,21 +168,10 @@ def apply(root, api_id, api_hash):
                 raise RuntimeError(f"Dark theme key {key}: {count} matches")
         return s
     rewrite(dark_asset, patch_dark_asset)
-    theme_java = root / "TMessagesProj/src/main/java/org/telegram/ui/ActionBar/Theme.java"
-    def patch_theme_java(s):
-        if s.count('"Dark Blue"') < 4:
-            raise RuntimeError("Unexpected built-in dark theme reference count")
-        s = s.replace('"Dark Blue"', '"FluidGlass Dark"')
-        anchor = '            String theme = preferences.getString("theme", null);'
-        migration = '''            // Select FluidGlass once; subsequent manual theme changes are retained.
-            if (!themeConfig.getBoolean("fluidglass_v03_applied", false)) {
-                preferences.edit().putString("theme", "FluidGlass Dark")
-                        .putInt("selectedAutoNightType", AUTO_NIGHT_TYPE_NONE).apply();
-                themeConfig.edit().putBoolean("fluidglass_v03_applied", true).apply();
-            }
-'''
-        return replace_exact(s, anchor, migration + anchor, theme_java)
-    rewrite(theme_java, patch_theme_java)
+    # Startup safety in v0.3.1: do NOT replace Telegram's built-in theme
+    # identifiers or write theme preferences during ApplicationLoader startup.
+    # The recolored "Dark Blue" preset is user-selectable under Appearance.
+    # This avoids startup regressions from the aggressive v0.3 migration.
 
     # Firebase Google Services must run on the application module only.
     # Its Android library module retains the upstream namespace, not our app ID.
@@ -217,7 +206,7 @@ def apply(root, api_id, api_hash):
                                 '<item name="android:windowBackground">#0B1524</item>', styles)
         return head + start_tag + section + "</style>" + tail
     rewrite(styles, patch_styles)
-    print("FluidGram v0.3 FluidGlass applied. Install package: " + PACKAGE + ".web")
+    print("FluidGram v0.3.1 FluidGlass safe-start applied. Install package: " + PACKAGE + ".web")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

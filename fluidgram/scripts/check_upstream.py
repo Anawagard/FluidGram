@@ -9,6 +9,8 @@ FILES = (
     "gradle.properties",
     "TMessagesProj/build.gradle",
     "TMessagesProj/src/main/java/org/telegram/ui/ActionBar/Theme.java",
+    "TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java",
+    "TMessagesProj/src/main/java/org/telegram/ui/LaunchActivity.java",
     "TMessagesProj/src/main/assets/darkblue.attheme",
     "TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java",
     "TMessagesProj/src/main/java/org/telegram/ui/Components/InstantCameraView.java",
@@ -40,6 +42,24 @@ def verify():
         assert "FluidMotion.videoEncoderFrameRate(videoEncoder, VIDEO_MIME_TYPE, videoWidth, videoHeight, fluidPrefer60Fps)" in camera
         assert "fluidSwitchingCamera" in camera
         assert "oldSession.destroy(true, openNewCamera)" in camera
+        assert "camera_haptic" in camera
+        settings = (root / "TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java").read_text(encoding="utf8")
+        launcher = (root / "TMessagesProj/src/main/java/org/telegram/ui/LaunchActivity.java").read_text(encoding="utf8")
+        manifest = (root / "TMessagesProj/config/release/AndroidManifest_standalone.xml").read_text(encoding="utf8")
+        labs = (root / "TMessagesProj/src/main/java/org/telegram/ui/FluidLabsActivity.java").read_text(encoding="utf8")
+        refresh = (root / "TMessagesProj/src/main/java/org/telegram/ui/FluidRefresh.java").read_text(encoding="utf8")
+        assert "FluidGram Labs" in settings and "case 27:" in settings
+        assert "FluidLabsActivity.class" in settings
+        assert "FluidRefresh.resume(this)" in launcher
+        assert "FluidRefresh.pause(this)" in launcher
+        assert 'android:name="org.telegram.ui.FluidLabsActivity"' in manifest
+        assert 'android:exported="false"' in manifest
+        assert "VSync HUD" in labs and "Neon Glass" in labs
+        assert "ColorOS · Автоматически" in labs
+        assert "preferredRefreshRate = 0f" in refresh
+        assert "getSupportedModes()" in refresh
+        assert "preferredDisplayModeId = best.getModeId()" in refresh
+        assert "batteryPercent" in refresh
         # Catch literal backslash-n leaked into Java by Python string escaping.
         assert r"setPrefer60Fps(fluidPrefer60Fps);\n" not in camera
         assert "camera2Sessions[a].setPrefer60Fps(fluidPrefer60Fps);\n" in camera
@@ -55,7 +75,7 @@ def verify():
         assert "CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES" in fps
         assert "0xffDDF7F4" in palette
         assert f"APP_PACKAGE={PACKAGE}" in props
-        assert "APP_VERSION_CODE=7240" in props
+        assert "APP_VERSION_CODE=7241" in props
         assert "FluidGram (unofficial)" in (root / "TMessagesProj/src/main/res/values/strings.xml").read_text(encoding="utf8")
         print("OK: applied to pinned source; no APK compiled, no private credentials")
 

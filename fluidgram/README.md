@@ -1,14 +1,19 @@
-# FluidGram v0.4 Alpha — stable camera switch and custom controls
+# FluidGram v0.5 Alpha — Labs / ColorOS refresh profiles
 
-Targets the reported crash/black screen when switching round-video recording **front → rear** on OnePlus 15 (CPH2747). The precise crash origin is unverified without an Android logcat.
+Integrated a genuine **FluidGram Labs** entry in Telegram Settings with independent glass UI; profiles for the display, visual toggles and new diagnostic tools.
 
-For OnePlus 15 only, this version disables the simultaneous dual Camera2 opening and waits for asynchronous release of the previous session before creating the next. A failed rear-camera initialization returns to front, and a 3.5-second no-frame condition attempts recovery. It preserves the prior camera preview during switching and fades the overlay on the first new frame.
+- **ColorOS Auto:** clears app refresh rate and display mode hints and lets the OS decide.
+- **Adaptive+:** requests the highest advertised refresh rate for the app, with no guarantee ColorOS honors it.
+- **Max up to 165Hz:** requests the fastest advertised display mode at the current resolution; only if advertised by Android. The OS may override it.
+- **Smart battery:** requests high refresh but falls back to ColorOS control when battery <= 25% on activity resume.
+- **VSync HUD:** display event sample readout, *not* actual app rendering or video encoding FPS.
+- **Keep screen awake:** stays on while FluidGram activity is foreground.
+- **Neon Glass UI:** distinctive cyan glowing options panel.
+- **Camera haptics:** enables tap vibration when switching video-circle lenses.
+- **Copy display modes:** local device refresh and resolution diagnostics, no user messages copied.
 
-**Distinctive round-recording controls:**
-- **60 FPS / LIGHT** control switches between supported 60fps priority and a 30fps-friendly low-light mode; choice persists. Toggling while recording changes the camera's AE FPS request immediately, but the video encoder mode only applies on the next recording.
-- **Double tap the round preview** to switch front/rear, retaining pinch-to-zoom.
-- Automatic front-camera recovery when rear activation fails.
+The OS decides actual panel refresh; if ColorOS auto is capped to 90Hz by firmware/app list, app cannot guarantee 165Hz through a public API. To prioritize higher FPS try Adaptive+ or Max instead.
 
-No guarantee of true 60fps in low light; device hardware tests are required. The previous v0.2 APK remains the rollback baseline.
+v0.4 camera recovery and 60/LIGHT modes retained. Upgrades via versionCode 7241, same application ID `dev.fluidgram.oneplus15.web`, same signing keystore. GitHub Actions artifact `FluidGram-OnePlus15-v05-Labs-165Hz`.
 
-APK package: `dev.fluidgram.oneplus15.web`; versionCode `7240`. CI artifact: `FluidGram-OnePlus15-v04-camera-hotfix`. Telegram original pinned commit `3de37c8cfb039452be7398909461da6288babf15`. GPL-2.0-or-later. Do not distribute development binaries with public test Telegram API credentials.
+GPL-2.0-or-later, based on official Telegram `3de37c8cfb039452be7398909461da6288babf15`. Never distribute binaries signed with test-only API credentials. Android API reference: https://developer.android.com/reference/android/view/WindowManager.LayoutParams.

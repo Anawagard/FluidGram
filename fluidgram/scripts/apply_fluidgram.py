@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Apply FluidGram v0.4 camera-safe FluidGlass overlay to pinned Telegram Android checkout."""
+"""Apply FluidGram v0.5 Labs ColorOS refresh overlay to pinned Telegram Android checkout."""
 import argparse
 import os
 import re
@@ -238,7 +238,7 @@ def apply(root, api_id, api_hash):
     props = root / "gradle.properties"
     def patch_properties(s):
         s = replace_exact(s, "APP_PACKAGE=org.telegram.messenger", "APP_PACKAGE=" + PACKAGE, props)
-        return replace_exact(s, "APP_VERSION_CODE=7237", "APP_VERSION_CODE=7240", props)
+        return replace_exact(s, "APP_VERSION_CODE=7237", "APP_VERSION_CODE=7241", props)
     rewrite(props, patch_properties)
 
     buildvars = root / "TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java"
@@ -284,7 +284,14 @@ def apply(root, api_id, api_hash):
                           "            valueAnimator.setInterpolator(FluidMotion.cameraFlipInterpolator());", camera)
         s = replace_exact(s, "                format.setInteger(MediaFormat.KEY_FRAME_RATE, FRAME_RATE);",
                           "                format.setInteger(MediaFormat.KEY_FRAME_RATE, FluidMotion.videoEncoderFrameRate(videoEncoder, VIDEO_MIME_TYPE, videoWidth, videoHeight, fluidPrefer60Fps));", camera)
-        return patch_round_camera_extras(s, camera)
+        s = patch_round_camera_extras(s, camera)
+        needle = "            flipAnimationInProgress = true;"
+        haptic = """            if (getContext().getSharedPreferences("fluidgram_labs", Context.MODE_PRIVATE)
+                    .getBoolean("camera_haptic", true)) {
+                switchCameraButton.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+            }
+"""
+        return replace_exact(s, needle, haptic + needle, camera)
     rewrite(camera, patch_camera)
     motion = camera.parent / "FluidMotion.java"
     if motion.exists(): raise RuntimeError("FluidMotion exists already; apply only once")
@@ -344,6 +351,65 @@ def apply(root, api_id, api_hash):
     # The recolored "Dark Blue" preset is user-selectable under Appearance.
     # This avoids startup regressions from the aggressive v0.3 migration.
 
+
+    labs_dir = Path(__file__).resolve().parents[1] / "android"
+    for name in ("FluidRefresh.java", "FluidLabsActivity.java"):
+        original = labs_dir / name
+        if not original.is_file():
+            raise RuntimeError(f"FluidGram Labs source missing: {original}")
+        dest = root / "TMessagesProj/src/main/java/org/telegram/ui" / name
+        if dest.exists():
+            raise RuntimeError(f"FluidGram Labs already installed: {dest}")
+        dest.write_text(original.read_text(encoding="utf8"), encoding="utf8")
+
+    settings = root / "TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java"
+    def patch_settings(src):
+        needle = "        items.add(SettingCell.Factory.of(9, IconBackgroundColors.ORANGE_DEEP.top"
+        if src.count(needle) != 1:
+            raise RuntimeError("Settings menu anchor changed")
+        line = """        items.add(SettingCell.Factory.of(27, 0xFF4DDFCE, 0xFF176487,
+                R.drawable.settings_power, "FluidGram Labs",
+                "165 Гц · ColorOS · необычные функции"));
+"""
+        src = src.replace(needle, line + needle, 1)
+        click = """            case 27:
+                if (getParentActivity() != null) {
+                    getParentActivity().startActivity(new Intent(getParentActivity(), FluidLabsActivity.class));
+                }
+                break;
+"""
+        return replace_exact(src, "            case 11:", click + "            case 11:", settings)
+    rewrite(settings, patch_settings)
+
+    launcher = root / "TMessagesProj/src/main/java/org/telegram/ui/LaunchActivity.java"
+    def patch_launcher(src):
+        src = replace_exact(src,
+            """    protected void onResume() {
+        super.onResume();
+        isResumed = true;""",
+            """    protected void onResume() {
+        super.onResume();
+        FluidRefresh.resume(this);
+        isResumed = true;""", launcher)
+        return replace_exact(src,
+            """    protected void onPause() {
+        super.onPause();
+        isResumed = false;""",
+            """    protected void onPause() {
+        FluidRefresh.pause(this);
+        super.onPause();
+        isResumed = false;""", launcher)
+    rewrite(launcher, patch_launcher)
+
+    # The custom Labs screen is not exported outside FluidGram.
+    rewrite(manifest, lambda src: replace_exact(
+        src, 'tools:replace="android:supportsRtl">',
+        '''tools:replace="android:supportsRtl">
+        <activity android:name="org.telegram.ui.FluidLabsActivity"
+                  android:exported="false"
+                  android:theme="@style/Theme.TMessages.Start"
+                  android:label="FluidGram Labs" />''', manifest))
+
     # Firebase Google Services must run on the application module only.
     # Its Android library module retains the upstream namespace, not our app ID.
     library_gradle = root / "TMessagesProj/build.gradle"
@@ -377,7 +443,7 @@ def apply(root, api_id, api_hash):
                                 '<item name="android:windowBackground">#0B1524</item>', styles)
         return head + start_tag + section + "</style>" + tail
     rewrite(styles, patch_styles)
-    print("FluidGram v0.4 safe camera switch and custom controls applied. Install package: " + PACKAGE + ".web")
+    print("FluidGram v0.5 Labs and ColorOS refresh policies applied. Install package: " + PACKAGE + ".web")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

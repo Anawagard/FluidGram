@@ -270,14 +270,14 @@ def apply(root, api_id, api_hash):
         s = replace_exact(s, "            bothCameras = DualCameraView.roundDualAvailableStatic(getContext());",
                           "            bothCameras = !FluidMotion.isOnePlus15() && DualCameraView.roundDualAvailableStatic(getContext());", camera)
         s = replace_exact(s, "                            camera2Sessions[a].setRecordingVideo(true);",
-                          "                            camera2Sessions[a].setPrefer60Fps(fluidPrefer60Fps);\\n                            camera2Sessions[a].setRecordingVideo(true);", camera)
+                          "                            camera2Sessions[a].setPrefer60Fps(fluidPrefer60Fps);\n                            camera2Sessions[a].setRecordingVideo(true);", camera)
         # Upstream has two copies: initial open and sequential switch.
         # Change the first, then replace the switch method separately.
         recording_anchor = "                camera2SessionCurrent.setRecordingVideo(true);"
         if s.count(recording_anchor) != 2:
             raise RuntimeError("Upstream Camera2 setRecordingVideo layout changed")
         s = s.replace(recording_anchor,
-                      "                camera2SessionCurrent.setPrefer60Fps(fluidPrefer60Fps);\\n" + recording_anchor, 1)
+                      "                camera2SessionCurrent.setPrefer60Fps(fluidPrefer60Fps);\n" + recording_anchor, 1)
         s = replace_exact(s, "            valueAnimator.setDuration(580);",
                           "            valueAnimator.setDuration(FluidMotion.cameraFlipDurationMillis());", camera)
         s = replace_exact(s, "            valueAnimator.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);",

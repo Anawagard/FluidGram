@@ -40,6 +40,10 @@ def verify():
         assert "FluidMotion.videoEncoderFrameRate(videoEncoder, VIDEO_MIME_TYPE, videoWidth, videoHeight, fluidPrefer60Fps)" in camera
         assert "fluidSwitchingCamera" in camera
         assert "oldSession.destroy(true, openNewCamera)" in camera
+        # Catch literal backslash-n leaked into Java by Python string escaping.
+        assert r"setPrefer60Fps(fluidPrefer60Fps);\n" not in camera
+        assert "camera2Sessions[a].setPrefer60Fps(fluidPrefer60Fps);\n" in camera
+        assert "camera2SessionCurrent.setPrefer60Fps(fluidPrefer60Fps);\n" in camera
         assert "FluidGram: smoother video mode" in camera
         assert "lastFluidPreviewTapUptime" in camera
         assert "FluidMotion.isOnePlus15()" in camera

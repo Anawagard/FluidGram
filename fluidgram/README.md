@@ -1,19 +1,14 @@
-# FluidGram v0.3.1 Alpha — FluidGlass Dark startup hotfix
+# FluidGram v0.4 Alpha — stable camera switch and custom controls
 
-This patch prioritizes startup compatibility on OnePlus 15 / ColorOS 17 after reports that v0.3 closed on launch. There is no device-side crash log yet, so the exact cause is **unconfirmed**.
+Targets the reported crash/black screen when switching round-video recording **front → rear** on OnePlus 15 (CPH2747). The precise crash origin is unverified without an Android logcat.
 
-## Startup change
+For OnePlus 15 only, this version disables the simultaneous dual Camera2 opening and waits for asynchronous release of the previous session before creating the next. A failed rear-camera initialization returns to front, and a 3.5-second no-frame condition attempts recovery. It preserves the prior camera preview during switching and fades the overlay on the first new frame.
 
-The initial v0.3 changed Telegram's internal "Dark Blue" theme identifiers across Theme.java and forced a one-time SharedPreferences migration at startup. v0.3.1 **removes both changes** to reduce boot-time risk and preserve the native theme-selection logic.
+**Distinctive round-recording controls:**
+- **60 FPS / LIGHT** control switches between supported 60fps priority and a 30fps-friendly low-light mode; choice persists. Toggling while recording changes the camera's AE FPS request immediately, but the video encoder mode only applies on the next recording.
+- **Double tap the round preview** to switch front/rear, retaining pinch-to-zoom.
+- Automatic front-camera recovery when rear activation fails.
 
-The FluidGlass colors remain in the app's modified **Dark Blue** preset. After the app opens, go to **Settings → Chat Settings / Appearance → Themes → Dark Blue** to apply FluidGlass. Do not expect it to be forced on first launch; this is a conservative recovery build.
+No guarantee of true 60fps in low light; device hardware tests are required. The previous v0.2 APK remains the rollback baseline.
 
-The fast camera flip transition and conditional supported-60fps Camera2/AVC settings remain. 60fps cannot be guaranteed in poor light and still needs hardware testing. App versionCode increases from 7238 to 7239, preserving application ID and release signing keystore for an in-place update.
-
-## Build & safety
-
-GitHub Actions artifact: `FluidGram-OnePlus15-alpha3-1-safe-start`.
-
-All changes are open source and based on official pinned Telegram Android source `3de37c8cfb039452be7398909461da6288babf15` (GPL-2.0-or-later). Signing keys and API credentials are GitHub Secrets, never committed. Do not distribute APKs with public test-only Telegram API credentials.
-
-If startup still fails, collect a **redacted adb logcat** of the crash. Avoid uninstalling or clearing application data; clearing cache is less destructive. Android generally blocks downgrading to v0.2 while preserving app data, so an in-place hotfix with a higher versionCode is preferred.
+APK package: `dev.fluidgram.oneplus15.web`; versionCode `7240`. CI artifact: `FluidGram-OnePlus15-v04-camera-hotfix`. Telegram original pinned commit `3de37c8cfb039452be7398909461da6288babf15`. GPL-2.0-or-later. Do not distribute development binaries with public test Telegram API credentials.

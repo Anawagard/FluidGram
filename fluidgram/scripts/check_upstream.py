@@ -37,7 +37,12 @@ def verify():
         props = (root / FILES[0]).read_text(encoding="utf8")
         assert "google-services plugin is applied by AppStandalone only" in (root / "TMessagesProj/build.gradle").read_text(encoding="utf8")
         assert "flipAnimationInProgress)" in camera
-        assert "FluidMotion.videoEncoderFrameRate(videoEncoder, VIDEO_MIME_TYPE, videoWidth, videoHeight)" in camera
+        assert "FluidMotion.videoEncoderFrameRate(videoEncoder, VIDEO_MIME_TYPE, videoWidth, videoHeight, fluidPrefer60Fps)" in camera
+        assert "fluidSwitchingCamera" in camera
+        assert "oldSession.destroy(true, openNewCamera)" in camera
+        assert "FluidGram: smoother video mode" in camera
+        assert "lastFluidPreviewTapUptime" in camera
+        assert "FluidMotion.isOnePlus15()" in camera
         assert "\"Dark Blue\"" in (root / "TMessagesProj/src/main/java/org/telegram/ui/ActionBar/Theme.java").read_text(encoding="utf8")
         assert "fluidglass_v03_applied" not in (root / "TMessagesProj/src/main/java/org/telegram/ui/ActionBar/Theme.java").read_text(encoding="utf8")
         assert "chat_outBubble=#ff1c4951" in (root / "TMessagesProj/src/main/assets/darkblue.attheme").read_text(encoding="utf8")
@@ -46,7 +51,7 @@ def verify():
         assert "CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES" in fps
         assert "0xffDDF7F4" in palette
         assert f"APP_PACKAGE={PACKAGE}" in props
-        assert "APP_VERSION_CODE=7239" in props
+        assert "APP_VERSION_CODE=7240" in props
         assert "FluidGram (unofficial)" in (root / "TMessagesProj/src/main/res/values/strings.xml").read_text(encoding="utf8")
         print("OK: applied to pinned source; no APK compiled, no private credentials")
 

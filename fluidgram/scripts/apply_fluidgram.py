@@ -202,7 +202,17 @@ def patch_round_camera_extras(s, camera):
         }
 """
     s = replace_exact(s, anchor_end, flip + anchor_end, camera)
-    return s
+    oldFrame = '''                legacyCameraSwitchAwaitingFrame = false;
+                logLegacyCameraSwitchStage("first target frame presented: surface="'''
+    newFrame = '''                legacyCameraSwitchAwaitingFrame = false;
+                AndroidUtilities.runOnUIThread(() -> {
+                    cameraReady = true;
+                    if (textureOverlayView != null) {
+                        textureOverlayView.animate().alpha(0f).setDuration(120).start();
+                    }
+                });
+                logLegacyCameraSwitchStage("first target frame presented: surface="'''
+    return replace_exact(s, oldFrame, newFrame, camera)
 
 def replace_exact(source, old, new, path):
     n = source.count(old)

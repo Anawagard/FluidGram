@@ -10,8 +10,8 @@ class FluidGramTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             replace_exact("aaa", "a", "b", "test")
     def test_fps_range(self):
-        self.assertIn("return best60 != null ? best60 : best30 != null ? best30 : closest;", FPS_CLASS)
-        self.assertIn("if (low == 60 && high == 60) return range;", FPS_CLASS)
+        self.assertIn("return smooth60 && best60 != null ? best60", FPS_CLASS)
+        self.assertIn("if (smooth60 && low == 60 && high == 60) return range;", FPS_CLASS)
         self.assertNotIn("new Range", FPS_CLASS)
     def test_coloros(self):
         self.assertIn("defaultColors[key_chat_outBubble] = 0xffefffde;", THEME_CHANGES)
@@ -23,6 +23,13 @@ class FluidGramTest(unittest.TestCase):
         self.assertIn("PathInterpolator", MOTION_CLASS)
         self.assertIn("330L", MOTION_CLASS)
         self.assertIn("areSizeAndRateSupported(width, height, 60.0)", MOTION_CLASS)
+    def test_camera_safety(self):
+        from apply_fluidgram import patch_round_camera_extras
+        self.assertTrue(callable(patch_round_camera_extras))
+        self.assertIn("return choose(advertised, true);", FPS_CLASS)
+        self.assertIn("!smooth60 && low == 30 && high == 30", FPS_CLASS)
+        self.assertIn("isOnePlus15()", MOTION_CLASS)
+        self.assertIn("boolean prefer60", MOTION_CLASS)
     def test_branding(self):
         self.assertIn("<vector", ICON)
         self.assertNotIn("paper plane", ICON)

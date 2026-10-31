@@ -15,6 +15,9 @@ import android.widget.TextView;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.view.View;
+import android.os.Handler;
+import android.os.Looper;
+import android.view.ViewTreeObserver;
 
 /** FluidGram display hints: Android/ColorOS remains the final refresh-rate arbiter. */
 public final class FluidRefresh {
@@ -24,6 +27,11 @@ public final class FluidRefresh {
     private static Choreographer.FrameCallback ticker;
     private static long tickStartNs;
     private static int ticks;
+    private static final Handler adaptiveHandler = new Handler(Looper.getMainLooper());
+    private static Activity adaptiveOwner;
+    private static View adaptiveDecor;
+    private static ViewTreeObserver.OnScrollChangedListener scrollListener;
+    private static Runnable idleReset;
     private FluidRefresh() {}
     public static SharedPreferences prefs(Context c) {
         return c.getSharedPreferences(PREF, Context.MODE_PRIVATE);
@@ -77,20 +85,59 @@ public final class FluidRefresh {
         }
         window.setAttributes(lp);
     }
+    private static void stopAdaptive() {
+        if (idleReset != null) adaptiveHandler.removeCallbacks(idleReset);
+        if (adaptiveDecor != null && scrollListener != null
+                && adaptiveDecor.getViewTreeObserver().isAlive()) {
+            adaptiveDecor.getViewTreeObserver().removeOnScrollChangedListener(scrollListener);
+        }
+        adaptiveOwner = null;
+        adaptiveDecor = null;
+        scrollListener = null;
+        idleReset = null;
+    }
+    private static void startAdaptive(Activity a) {
+        stopAdaptive();
+        adaptiveOwner = a;
+        adaptiveDecor = a.getWindow().getDecorView();
+        final View decor = adaptiveDecor;
+        final float max = maxSupportedHz(a);
+        idleReset = () -> {
+            if (adaptiveOwner != a) return;
+            WindowManager.LayoutParams lp = a.getWindow().getAttributes();
+            lp.preferredRefreshRate = 0f;
+            lp.preferredDisplayModeId = 0;
+            a.getWindow().setAttributes(lp);
+        };
+        scrollListener = () -> {
+            if (adaptiveOwner != a || !decor.isAttachedToWindow()) return;
+            WindowManager.LayoutParams lp = a.getWindow().getAttributes();
+            if (lp.preferredRefreshRate != max) {
+                lp.preferredDisplayModeId = 0;
+                lp.preferredRefreshRate = max;
+                a.getWindow().setAttributes(lp);
+            }
+            adaptiveHandler.removeCallbacks(idleReset);
+            adaptiveHandler.postDelayed(idleReset, 1200);
+        };
+        decor.getViewTreeObserver().addOnScrollChangedListener(scrollListener);
+    }
     public static void resume(Activity a) { refresh(a); }
     public static void refresh(Activity a) {
+        stopAdaptive();
         apply(a);
+        if (prefs(a).getInt("refresh_mode", 4) == 4) startAdaptive(a);
         boolean keep = prefs(a).getBoolean("keep_screen_on", false);
         if (keep) a.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         else a.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         stopHud();
         if (prefs(a).getBoolean("show_vsync", false)) startHud(a);
     }
-    public static void pause(Activity a) { if (owner == a) stopHud(); }
+    public static void pause(Activity a) { if (owner == a) stopHud(); if (adaptiveOwner == a) stopAdaptive(); }
     public static String diagnostic(Activity a) {
         Display d = a.getWindowManager().getDefaultDisplay();
         StringBuilder b = new StringBuilder();
-        b.append("FluidGram v0.5; ColorOS controls final refresh rate\n");
+        b.append("FluidGram v0.6; ColorOS controls final refresh rate\n");
         b.append("Device: ").append(android.os.Build.MANUFACTURER).append(" ")
                 .append(android.os.Build.MODEL).append("\n");
         b.append("ColorOS/Android reported Hz: ").append(d.getRefreshRate()).append("\n");

@@ -402,6 +402,7 @@ def apply(root, api_id, api_hash):
     rewrite(launcher, patch_launcher)
 
     # The custom Labs screen is not exported outside FluidGram.
+    manifest = root / "TMessagesProj/config/release/AndroidManifest_standalone.xml"
     rewrite(manifest, lambda src: replace_exact(
         src, 'tools:replace="android:supportsRtl">',
         '''tools:replace="android:supportsRtl">

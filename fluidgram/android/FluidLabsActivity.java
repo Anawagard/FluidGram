@@ -31,8 +31,8 @@ public final class FluidLabsActivity extends Activity {
     private static final int ACCENT = 0xFFE2F9FF;
     private static final String[] MODE_NAMES = {
         "ColorOS · Автоматически", "Adaptive+ · Высокая плавность",
-        "Максимум · до 165 Гц", "Умный · экономия при 25%",
-        "Adaptive 1–165 · прокрутка / покой"
+        "Максимум · совместимый режим", "Умный · экономия при 20%",
+        "Adaptive · прокрутка / покой"
     };
     private int dp(float n) { return (int) (n * getResources().getDisplayMetrics().density + .5f); }
     private GradientDrawable background(int first, int second, int radius, boolean border) {
@@ -103,7 +103,7 @@ public final class FluidLabsActivity extends Activity {
         hero.setPadding(dp(21), dp(22), dp(21), dp(23));
         hero.setBackground(FluidGlass.surface(this, true));
         hero.setElevation(dp(8));
-        TextView eyebrow = text("FLUIDGRAM  /  GLASS LABS  0.7", 12, 0xFFB6FFEE, true);
+        TextView eyebrow = text("FLUIDGRAM  /  GLASS LABS  0.8", 12, 0xFFB6FFEE, true);
         hero.addView(eyebrow, margins(9));
         TextView headline = text("Живое стекло.\nТвой Telegram.", 27, Color.WHITE, true);
         hero.addView(headline, margins(10));
@@ -111,10 +111,10 @@ public final class FluidLabsActivity extends Activity {
         hero.addView(desc);
         root.addView(hero, margins(24));
 
-        section("ЭКРАН  /  ADAPTIVE 165 Гц");
+        section("ЭКРАН  /  ADAPTIVE REFRESH");
         int mode = preferences.getInt("refresh_mode", 4);
         card("Частота обновления", MODE_NAMES[Math.max(0, Math.min(mode, 4))],
-            "При прокрутке запрашивает максимум, в покое отдаёт управление ColorOS. 1 Гц не гарантируется.", () -> {
+            "При прокрутке запрашивает совместимый максимум, в покое — системный режим. При 20% заряда и энергосбережении повышенный запрос отключается.", () -> {
                 new AlertDialog.Builder(this).setTitle("Частота обновления")
                     .setSingleChoiceItems(MODE_NAMES, mode, (dlg, which) -> {
                         preferences.edit().putInt("refresh_mode", which).apply();
@@ -129,7 +129,7 @@ public final class FluidLabsActivity extends Activity {
                      Math.round(FluidRefresh.maxSupportedHz(this)) + " Гц доступно",
              "Значения сообщает Android, не обещание стабильных 165 FPS.", null);
         section("ОСОБЕННОСТИ  /  LIVE");
-        toggle("VSync HUD", "Отладка кадровых импульсов. Дополнительные кадры HUD увеличивают нагрузку; в обычном режиме лучше выключить.",
+        toggle("Экран · частота HUD", "Показывает частоту дисплея по событиям Android, без постоянной отрисовки. Не измеряет FPS приложения.",
                "show_vsync", false);
         toggle("Экран без сна", "Не выключать экран, пока FluidGram открыт. Может повышать расход энергии.",
                "keep_screen_on", false);
@@ -137,6 +137,13 @@ public final class FluidLabsActivity extends Activity {
                "neon_labs", true);
         toggle("Тактильное переключение", "Короткий виброотклик при смене камеры видеокружка.",
                "camera_haptic", true);
+        section("ЭНЕРГОЭФФЕКТИВНОСТЬ");
+        android.os.PowerManager pm = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
+        boolean saver = pm != null && pm.isPowerSaveMode();
+        int charge = FluidRefresh.batteryPercent(this);
+        card("Энергетический профиль", charge + "% · " +
+                (saver ? "энергосбережение Android" : "обычный режим"),
+            "При заряде ≤20% или системном энергосбережении Adaptive не запрашивает высокую частоту. Эффект экономии требует измерений.", null);
         section("ДИАГНОСТИКА  /  COLOROS");
         card("Скопировать режимы экрана", "Отладка 90 / 120 / 165 Гц",
             "Экспортирует только модель устройства, частоты дисплея и выбранный режим. Без переписок и ключей.",

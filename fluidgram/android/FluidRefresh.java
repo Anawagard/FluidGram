@@ -5,7 +5,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.BatteryManager;
-import android.view.Choreographer;
+import android.hardware.display.DisplayManager;
+import android.os.PowerManager;
+import android.os.SystemClock;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.Window;
@@ -24,9 +26,10 @@ public final class FluidRefresh {
     public static final String PREF = "fluidgram_labs";
     private static Activity owner;
     private static TextView hud;
-    private static Choreographer.FrameCallback ticker;
-    private static long tickStartNs;
-    private static int ticks;
+    private static DisplayManager displayManager;
+    private static DisplayManager.DisplayListener displayListener;
+    private static long lastPowerCheckMs;
+    private static boolean highRefreshAllowed;
     private static final Handler adaptiveHandler = new Handler(Looper.getMainLooper());
     private static Activity adaptiveOwner;
     private static View adaptiveDecor;
@@ -38,13 +41,16 @@ public final class FluidRefresh {
     }
     public static float maxSupportedHz(Activity a) {
         Display d = a.getWindowManager().getDefaultDisplay();
-        float max = 0f;
+        float max = d.getRefreshRate();
         if (android.os.Build.VERSION.SDK_INT >= 23) {
+            Display.Mode active = d.getMode();
             for (Display.Mode mode : d.getSupportedModes()) {
-                if (mode.getRefreshRate() > max) max = mode.getRefreshRate();
+                if (mode.getPhysicalWidth() == active.getPhysicalWidth()
+                        && mode.getPhysicalHeight() == active.getPhysicalHeight()
+                        && mode.getRefreshRate() > max) max = mode.getRefreshRate();
             }
         }
-        return max > 0f ? max : d.getRefreshRate();
+        return max;
     }
     public static int batteryPercent(Context c) {
         Intent state = c.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
@@ -53,15 +59,15 @@ public final class FluidRefresh {
         int scale = state.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
         return level < 0 || scale <= 0 ? 100 : level * 100 / scale;
     }
-    /** 0 system/ColorOS auto; 1 high FPS hint; 2 highest supported mode;
-        3 high FPS hint with low battery fallback. */
+    /** 0 system/ColorOS auto; 1 high FPS hint; 2 highest compatible mode;
+        3 high FPS hint with low battery fallback; 4 scroll-only adaptive hint. */
     public static void apply(Activity a) {
         if (a == null) return;
         Window window = a.getWindow();
         SharedPreferences p = prefs(a);
         int setting = p.getInt("refresh_mode", 4);
         float highest = maxSupportedHz(a);
-        if (setting == 3 && batteryPercent(a) <= 25) setting = 0;
+        if (setting == 3 && !allowHighRefresh(a)) setting = 0;
         WindowManager.LayoutParams lp = window.getAttributes();
         lp.preferredDisplayModeId = 0;
         lp.preferredRefreshRate = 0f; // Return full authority to ColorOS for system auto mode.
@@ -85,6 +91,17 @@ public final class FluidRefresh {
         }
         window.setAttributes(lp);
     }
+    /** Cached energy budget: avoid querying the battery receiver on every scroll event. */
+    private static boolean allowHighRefresh(Activity a) {
+        long now = SystemClock.elapsedRealtime();
+        if (lastPowerCheckMs == 0L || now - lastPowerCheckMs >= 15000L) {
+            PowerManager pm = (PowerManager) a.getSystemService(Context.POWER_SERVICE);
+            highRefreshAllowed = batteryPercent(a) > 20
+                    && (pm == null || !pm.isPowerSaveMode());
+            lastPowerCheckMs = now;
+        }
+        return highRefreshAllowed;
+    }
     private static void stopAdaptive() {
         if (idleReset != null) adaptiveHandler.removeCallbacks(idleReset);
         if (adaptiveDecor != null && scrollListener != null
@@ -105,12 +122,19 @@ public final class FluidRefresh {
         idleReset = () -> {
             if (adaptiveOwner != a) return;
             WindowManager.LayoutParams lp = a.getWindow().getAttributes();
-            lp.preferredRefreshRate = 0f;
-            lp.preferredDisplayModeId = 0;
-            a.getWindow().setAttributes(lp);
+            if (lp.preferredRefreshRate != 0f || lp.preferredDisplayModeId != 0) {
+                lp.preferredRefreshRate = 0f;
+                lp.preferredDisplayModeId = 0;
+                a.getWindow().setAttributes(lp);
+            }
         };
         scrollListener = () -> {
             if (adaptiveOwner != a || !decor.isAttachedToWindow()) return;
+            if (!allowHighRefresh(a)) {
+                adaptiveHandler.removeCallbacks(idleReset);
+                idleReset.run();
+                return;
+            }
             WindowManager.LayoutParams lp = a.getWindow().getAttributes();
             if (lp.preferredRefreshRate != max) {
                 lp.preferredDisplayModeId = 0;
@@ -137,12 +161,19 @@ public final class FluidRefresh {
     public static String diagnostic(Activity a) {
         Display d = a.getWindowManager().getDefaultDisplay();
         StringBuilder b = new StringBuilder();
-        b.append("FluidGram v0.7; ColorOS controls final refresh rate\n");
+        b.append("FluidGram v0.8; ColorOS controls final refresh rate\n");
         b.append("Device: ").append(android.os.Build.MANUFACTURER).append(" ")
                 .append(android.os.Build.MODEL).append("\n");
         b.append("ColorOS/Android reported Hz: ").append(d.getRefreshRate()).append("\n");
         b.append("Max advertised Hz: ").append(maxSupportedHz(a)).append("\n");
-        b.append("Mode: ").append(prefs(a).getInt("refresh_mode", 0)).append("\n");
+        b.append("Mode: ").append(prefs(a).getInt("refresh_mode", 4)).append("\n");
+        b.append("Battery: ").append(batteryPercent(a)).append("%\n");
+        PowerManager pm = (PowerManager) a.getSystemService(Context.POWER_SERVICE);
+        b.append("System power saver: ").append(pm != null && pm.isPowerSaveMode()).append("\n");
+        WindowManager.LayoutParams attrs = a.getWindow().getAttributes();
+        b.append("Requested Hz: ").append(attrs.preferredRefreshRate).append("\n");
+        b.append("Requested mode ID: ").append(attrs.preferredDisplayModeId).append("\n");
+        b.append("HUD: event-driven display mode listener, not measured app FPS\n");
         if (android.os.Build.VERSION.SDK_INT >= 23) {
             for (Display.Mode m : d.getSupportedModes()) {
                 b.append("Mode #").append(m.getModeId()).append(": ")
@@ -155,50 +186,53 @@ public final class FluidRefresh {
     private static int px(Activity a, int dp) {
         return (int) (dp * a.getResources().getDisplayMetrics().density + 0.5f);
     }
+    /** No per-frame callbacks: the diagnostic HUD updates only on display-mode changes. */
+    private static void updateHud(Activity a, TextView label) {
+        if (owner != a || hud != label) return;
+        Display d = a.getWindowManager().getDefaultDisplay();
+        label.setText("Экран • " + Math.round(d.getRefreshRate()) + " Гц");
+    }
     private static void startHud(Activity a) {
         View decor = a.getWindow().getDecorView();
         if (!(decor instanceof FrameLayout)) return;
         FrameLayout frame = (FrameLayout) decor;
-        TextView text = new TextView(a);
-        text.setTextColor(Color.rgb(145, 255, 238));
-        text.setTextSize(12);
-        text.setPadding(px(a, 12), px(a, 7), px(a, 12), px(a, 7));
-        text.setText("VSync • -- Hz");
+        TextView label = new TextView(a);
+        label.setTextColor(Color.rgb(145, 255, 238));
+        label.setTextSize(12);
+        label.setPadding(px(a, 12), px(a, 7), px(a, 12), px(a, 7));
         GradientDrawable bg = new GradientDrawable();
         bg.setColor(0xEB0A2535);
         bg.setCornerRadius(px(a, 16));
         bg.setStroke(px(a, 1), 0x8870EBDD);
-        text.setBackground(bg);
+        label.setBackground(bg);
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(-2, -2,
                 Gravity.TOP | Gravity.END);
         lp.topMargin = px(a, 85);
         lp.rightMargin = px(a, 10);
-        frame.addView(text, lp);
+        frame.addView(label, lp);
         owner = a;
-        hud = text;
-        tickStartNs = 0L;
-        ticks = 0;
-        ticker = new Choreographer.FrameCallback() {
-            @Override public void doFrame(long ns) {
-                if (owner != a || hud != text) return;
-                if (tickStartNs == 0) tickStartNs = ns;
-                ticks++;
-                if (ns - tickStartNs >= 1000000000L) {
-                    int sampled = Math.round(ticks * 1000000000f / (ns - tickStartNs));
-                    text.setText("VSync • " + sampled + " Hz");
-                    tickStartNs = ns;
-                    ticks = 0;
+        hud = label;
+        updateHud(a, label);
+        displayManager = (DisplayManager) a.getSystemService(Context.DISPLAY_SERVICE);
+        if (displayManager != null) {
+            displayListener = new DisplayManager.DisplayListener() {
+                @Override public void onDisplayAdded(int id) {}
+                @Override public void onDisplayRemoved(int id) {}
+                @Override public void onDisplayChanged(int id) {
+                    if (owner == a && id == a.getWindowManager().getDefaultDisplay().getDisplayId()) {
+                        updateHud(a, label);
+                    }
                 }
-                Choreographer.getInstance().postFrameCallback(this);
-            }
-        };
-        Choreographer.getInstance().postFrameCallback(ticker);
+            };
+            displayManager.registerDisplayListener(displayListener, adaptiveHandler);
+        }
     }
     private static void stopHud() {
-        if (ticker != null) {
-            Choreographer.getInstance().removeFrameCallback(ticker);
-            ticker = null;
+        if (displayManager != null && displayListener != null) {
+            displayManager.unregisterDisplayListener(displayListener);
         }
+        displayListener = null;
+        displayManager = null;
         if (hud != null && hud.getParent() instanceof FrameLayout) {
             ((FrameLayout) hud.getParent()).removeView(hud);
         }

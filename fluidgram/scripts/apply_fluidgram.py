@@ -158,7 +158,7 @@ def apply(root, api_id, api_hash):
     dark_asset = root / "TMessagesProj/src/main/assets/darkblue.attheme"
     def patch_dark_asset(s):
         for key, color in FLUIDGLASS_COLORS.items():
-            pattern = r"(?m)^" + re.escape(key) + r"=[^\\n\\r]*$"
+            pattern = r"(?m)^" + re.escape(key) + r"=.*$"
             s, count = re.subn(pattern, key + "=" + color, s)
             if count != 1: raise RuntimeError(f"Dark theme key {key}: {count} matches")
         return s

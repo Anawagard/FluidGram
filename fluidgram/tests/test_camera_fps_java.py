@@ -26,13 +26,14 @@ public class CameraFpsCheck {
    throw new AssertionError("FPS range mismatch");
  }
  public static void main(String[] args){
-  eq(FluidCameraFps.choose(ranges(r(15,30),r(30,30),r(30,60))),30,30);
-  eq(FluidCameraFps.choose(ranges(r(15,30),r(30,60))),15,30);
-  eq(FluidCameraFps.choose(ranges(r(15,24),r(60,60))),15,24);
+  eq(FluidCameraFps.choose(ranges(r(15,30),r(30,30),r(30,60))),30,60);
+  eq(FluidCameraFps.choose(ranges(r(15,30),r(30,60))),30,60);
+  eq(FluidCameraFps.choose(ranges(r(15,24),r(60,60))),60,60);
   eq(FluidCameraFps.choose(ranges(r(24,30))),24,30);
+  eq(FluidCameraFps.choose(ranges(r(30,30),r(30,60),r(60,60))),60,60);
   if(FluidCameraFps.choose(null)!=null)throw new AssertionError("null");
   if(FluidCameraFps.choose(ranges())!=null)throw new AssertionError("empty");
-  System.out.println("six assertions passed");
+  System.out.println("seven assertions passed");
  }
 }
 """
@@ -53,4 +54,4 @@ class JavaSelectorTest(unittest.TestCase):
    self.assertEqual(compile.returncode,0,compile.stderr)
    run=subprocess.run(["java","-cp",str(root),"CameraFpsCheck"],capture_output=True,text=True)
    self.assertEqual(run.returncode,0,run.stderr)
-   self.assertIn("six assertions passed",run.stdout)
+   self.assertIn("seven assertions passed",run.stdout)

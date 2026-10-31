@@ -1,49 +1,22 @@
-# FluidGram v0.2 — Telegram for OnePlus 15 / ColorOS 17
+# FluidGram v0.3 Alpha — FluidGlass Dark + Camera Motion
 
-**Unofficial Telegram client (GPL-2.0-or-later).** Reviewable source overlay for a pinned official Android Telegram source revision: `3de37c8cfb039452be7398909461da6288babf15` (13.1.1 at project start). This project is a development prototype, **not yet a tested or distributable working messenger APK**.
+Based on the pinned upstream Telegram Android source `3de37c8cfb039452be7398909461da6288babf15`. GPL-2.0-or-later; unofficial.
 
-## Completed in v0.2
+## New in v0.3
 
-- Independent Android app ID `dev.fluidgram.oneplus15.web`, original teal circle icon and clear unofficial branding.
-- FluidMotion: 440-ms camera-flip transition with custom ColorOS-inspired easing, respecting Android system animation scale.
-- Prevents overlapping camera-switch animations; adds a 560-ms button debounce.
-- FluidCameraFps: reads supported Camera2 auto-exposure FPS ranges, prefers fixed **30 FPS if advertised**, otherwise the narrowest range containing 30 FPS and then the closest supported fallback. It does **not** force 60 FPS or alter the encoder; actual recording FPS remains subject to the device and encoder.
-- Initial ColorOS-inspired light palette: cool background, teal accent and sent bubbles (not a complete ColorOS theme).
-- CI: unit tests and actual patch-compatibility check against the upstream SHA, with no personal secrets.
-- A separate gated Android build that refuses to produce a login-capable APK until private API, Firebase, and signing material are configured.
+- Full bespoke **FluidGlass Dark** palette for menus, chat list, sent/received bubbles, dialogs, toolbar, and input surface. Dark slate surfaces and cyan/teal accents. This replaces the shipped Dark Blue preset.
+- On first start of v0.3 only, migrate to FluidGlass Dark; the user can subsequently switch themes manually. Dark startup background.
+- A shorter 330ms camera-flip animation, with 390ms cooldown and overlapping-flip protection. Existing Camera2 dual camera preopening remains.
+- Camera2 requests a supported fixed 60 FPS range when available, otherwise the best advertised range containing 60, or a 30 FPS fallback.
+- AVC encoder requests 60 FPS only if the selected encoder advertises support at the current video size; otherwise chooses 30 FPS.
+- `APP_VERSION_CODE=7238` for upgrade from v0.2 (7237), keeping the same Android package and signing key.
 
-## Get a working APK
+**Device limits:** In low light, a camera can lower FPS when using variable ranges. A fixed 60fps exposure sacrifices image brightness/quality and is not guaranteed in all camera configurations. Encoder 60fps support alone does not confirm camera throughput, actual video fps, or A/V sync. Measure output video timestamps on the real OnePlus 15 before claiming smooth 60fps.
 
-Create a dedicated GitHub repository for FluidGram; keep the source public to meet upstream GPL requirements. On GitHub, add these repository-level **Actions secrets** (do not paste them into a chat or source file):
+## Build
 
-| Secret | Contents |
-| --- | --- |
-| `FLUIDGRAM_API_ID` | Your own Telegram application ID from https://my.telegram.org |
-| `FLUIDGRAM_API_HASH` | The matching hex API hash |
-| `FLUIDGRAM_GOOGLE_SERVICES_JSON_B64` | Base64 encoded Firebase `google-services.json` including `dev.fluidgram.oneplus15.web` |
-| `FLUIDGRAM_KEYSTORE_B64` | Base64 encoded dedicated APK signing keystore |
-| `FLUIDGRAM_KEY_ALIAS` | Keystore signing alias |
-| `FLUIDGRAM_STORE_PASSWORD` | Keystore store password |
-| `FLUIDGRAM_KEY_PASSWORD` | Key password |
+From the dedicated repo's GitHub Actions, `FluidGram-OnePlus15-alpha3` contains the signed APK and checksum if all GitHub Secrets are configured. Use your **own Telegram API credentials** for any public release. Test-only credentials are not appropriate for distribution or real-user login. Do not share signing secrets or Firebase config in source control.
 
-**Never use Telegram's public sample API credentials or release signing key for distributing FluidGram.** Back up your own keystore in a safe private place; loss means signed updates cannot use the same certificate. Do not publish APKs built with test-only credentials. Use a valid Firebase project for the final app; if Firebase registration is unavailable, the Android build configuration must be revised and tested first.
+Run `python -m unittest discover -s fluidgram/tests -v` and `python fluidgram/scripts/check_upstream.py` for source checks. The CI also performs a complete Gradle/native build. Keep the working v0.2 APK for rollback.
 
-Go to **GitHub Actions → FluidGram Android APK (OnePlus 15) → Run workflow**. When secrets are missing, the validation jobs can pass but the APK stage is skipped. After a real signed build, the downloadable artifact `FluidGram-OnePlus15-alpha2` contains `app.apk` and a SHA-256 checksum. The first build may take substantial CI resources due to Telegram's native libraries.
-
-## Local source validation
-
-```bash
-python3 -m unittest discover -s fluidgram/tests -v
-python3 fluidgram/scripts/check_upstream.py
-```
-
-Integration test downloads only **public upstream source files** pinned to a SHA, injects **invalid placeholders only inside temporary files**, applies the patch, and checks expected results. It neither produces nor publishes a usable APK.
-
-## Limits & next steps
-
-- No OnePlus 15 hardware test, no proven improvement to sound synchronization, video fps, preview freezes or camera crashes yet.
-- The original recording and codec pipeline remains unchanged; only Camera2 advertised FPS choice and switch-button UI guard were modified.
-- Non-default Telegram themes can override these palette defaults; comprehensive ColorOS dark/light themes and chat animation polish remain later milestones.
-- All patches should be verified on the real device for startup, login, 2FA, notifications, camera, calls, privacy, and security. See `docs/ONEPLUS15_TEST_PLAN.md`.
-
-Official Telegram source: https://github.com/DrKLO/Telegram | License: GPL-2.0-or-later. No affiliation or endorsement by Telegram or OnePlus.
+Telegram source: https://github.com/DrKLO/Telegram; no endorsement by Telegram or OnePlus.

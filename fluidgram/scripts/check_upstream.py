@@ -7,6 +7,7 @@ from apply_fluidgram import UPSTREAM_SHA, PACKAGE, apply
 
 FILES = (
     "gradle.properties",
+    "TMessagesProj/build.gradle",
     "TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java",
     "TMessagesProj/src/main/java/org/telegram/ui/Components/InstantCameraView.java",
     "TMessagesProj/src/main/java/org/telegram/messenger/camera/Camera2Session.java",
@@ -32,6 +33,7 @@ def verify():
         fps = (root / FILES[3]).read_text(encoding="utf8")
         palette = (root / FILES[4]).read_text(encoding="utf8")
         props = (root / FILES[0]).read_text(encoding="utf8")
+        assert "google-services plugin is applied by AppStandalone only" in (root / "TMessagesProj/build.gradle").read_text(encoding="utf8")
         assert "flipAnimationInProgress)" in camera
         assert "FluidMotion.cameraFlipDurationMillis()" in camera
         assert "FluidCameraFps.choose(" in fps

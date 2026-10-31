@@ -54,7 +54,7 @@ def verify():
         assert "FluidRefresh.pause(this)" in launcher
         assert 'android:name="org.telegram.ui.FluidLabsActivity"' in manifest
         assert 'android:exported="false"' in manifest
-        assert "VSync HUD" in labs and "Glass highlights" in labs
+        assert "Экран · частота HUD" in labs and "Glass highlights" in labs
         assert "FluidGlass.surface(this, true)" in labs
         assert "FluidGlass.setAmbientBlur(glassBackdrop, false)" in labs
         glass = (root / "TMessagesProj/src/main/java/org/telegram/ui/FluidGlass.java").read_text(encoding="utf8")
@@ -64,6 +64,9 @@ def verify():
         assert "getSupportedModes()" in refresh
         assert "preferredDisplayModeId = best.getModeId()" in refresh
         assert "batteryPercent" in refresh
+        assert "registerDisplayListener(displayListener, adaptiveHandler)" in refresh
+        assert "unregisterDisplayListener(displayListener)" in refresh
+        assert "postFrameCallback" not in refresh
         # Catch literal backslash-n leaked into Java by Python string escaping.
         assert r"setPrefer60Fps(fluidPrefer60Fps);\n" not in camera
         assert "camera2Sessions[a].setPrefer60Fps(fluidPrefer60Fps);\n" in camera
@@ -79,7 +82,7 @@ def verify():
         assert "CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES" in fps
         assert "0xffDDF7F4" in palette
         assert f"APP_PACKAGE={PACKAGE}" in props
-        assert "APP_VERSION_CODE=7242" in props
+        assert "APP_VERSION_CODE=7243" in props
         assert "FluidGram (unofficial)" in (root / "TMessagesProj/src/main/res/values/strings.xml").read_text(encoding="utf8")
         print("OK: applied to pinned source; no APK compiled, no private credentials")
 

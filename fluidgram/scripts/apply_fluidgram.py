@@ -163,7 +163,7 @@ def apply(root, api_id, api_hash):
             if count == 0:
                 # Upstream dark asset inherits some colors from defaults.
                 # Add an explicit entry instead of rejecting the theme.
-                s += "\\n" + key + "=" + color + "\\n"
+                s += "\n" + key + "=" + color + "\n"
             elif count != 1:
                 raise RuntimeError(f"Dark theme key {key}: {count} matches")
         return s

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Apply FluidGram v0.3 FluidGlass overlay to pinned Telegram Android checkout."""
+"""Apply FluidGram v0.4 camera-safe FluidGlass overlay to pinned Telegram Android checkout."""
 import argparse
 import os
 import re
@@ -7,7 +7,7 @@ from pathlib import Path
 
 PACKAGE = "dev.fluidgram.oneplus15"
 UPSTREAM_SHA = "3de37c8cfb039452be7398909461da6288babf15"
-MOTION_CLASS = "/* GPL-2.0-or-later. FluidGram v0.3 */\npackage org.telegram.ui.Components;\nimport android.media.MediaCodec;\nimport android.media.MediaCodecInfo;\nimport android.view.animation.Interpolator;\nimport android.view.animation.PathInterpolator;\npublic final class FluidMotion {\n    private FluidMotion() {}\n    public static long cameraFlipDurationMillis() { return 330L; }\n    public static Interpolator cameraFlipInterpolator() {\n        return new PathInterpolator(0.20f, 0f, 0.15f, 1.00f);\n    }\n    public static int videoEncoderFrameRate(MediaCodec encoder, String mime, int width, int height) {\n        if (encoder == null || width <= 0 || height <= 0) return 30;\n        try {\n            MediaCodecInfo.CodecCapabilities caps = encoder.getCodecInfo().getCapabilitiesForType(mime);\n            if (caps != null && caps.getVideoCapabilities() != null\n                    && caps.getVideoCapabilities().areSizeAndRateSupported(width, height, 60.0)) return 60;\n        } catch (Exception ignored) {}\n        return 30;\n    }\n}\n"
+MOTION_CLASS = "/* GPL-2.0-or-later. FluidGram v0.4 */\npackage org.telegram.ui.Components;\nimport android.media.MediaCodec;\nimport android.media.MediaCodecInfo;\nimport android.os.Build;\nimport android.view.animation.Interpolator;\nimport android.view.animation.PathInterpolator;\npublic final class FluidMotion {\n    private FluidMotion() {}\n    public static boolean isOnePlus15() {\n        return (\"OnePlus\".equalsIgnoreCase(Build.MANUFACTURER) &&\n                (Build.MODEL != null && (Build.MODEL.contains(\"15\") || Build.MODEL.contains(\"CPH2747\"))))\n                || \"CPH2747\".equalsIgnoreCase(Build.MODEL);\n    }\n    public static long cameraFlipDurationMillis() { return 330L; }\n    public static Interpolator cameraFlipInterpolator() {\n        return new PathInterpolator(0.20f, 0f, 0.15f, 1.0f);\n    }\n    /** The encoder may only request 60 fps if user and codec allow it. */\n    public static int videoEncoderFrameRate(MediaCodec encoder, String mime, int width, int height, boolean prefer60) {\n        if (!prefer60 || encoder == null || width <= 0 || height <= 0) return 30;\n        try {\n            MediaCodecInfo.CodecCapabilities caps = encoder.getCodecInfo().getCapabilitiesForType(mime);\n            if (caps != null && caps.getVideoCapabilities() != null &&\n                    caps.getVideoCapabilities().areSizeAndRateSupported(width, height, 60.0)) return 60;\n        } catch (Exception ignored) {}\n        return 30;\n    }\n}\n"
 ICON = """<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp"
@@ -20,7 +20,7 @@ ICON = """<?xml version="1.0" encoding="utf-8"?>
 </vector>
 """
 
-FPS_CLASS = "/* GPL-2.0-or-later. FluidGram v0.3 */\npackage org.telegram.messenger.camera;\nimport android.util.Range;\n/** Prefer an advertised 60fps camera AE range, otherwise a 30fps fallback. */\npublic final class FluidCameraFps {\n    private FluidCameraFps() {}\n    public static Range<Integer> choose(Range<Integer>[] advertised) {\n        if (advertised == null || advertised.length == 0) return null;\n        Range<Integer> best60 = null, best30 = null, closest = null;\n        for (Range<Integer> range : advertised) {\n            if (range == null) continue;\n            int low = range.getLower(), high = range.getUpper();\n            if (low <= 0 || high < low) continue;\n            if (low == 60 && high == 60) return range;\n            if (low <= 60 && high >= 60 &&\n                    (best60 == null || low > best60.getLower() ||\n                    low == best60.getLower() && high < best60.getUpper())) best60 = range;\n            if (low <= 30 && high >= 30 &&\n                    (best30 == null || high-low < best30.getUpper()-best30.getLower())) best30 = range;\n            if (closest == null || Math.abs(high-30) < Math.abs(closest.getUpper()-30)) closest = range;\n        }\n        return best60 != null ? best60 : best30 != null ? best30 : closest;\n    }\n}\n"
+FPS_CLASS = "/* GPL-2.0-or-later. FluidGram v0.4 */\npackage org.telegram.messenger.camera;\nimport android.util.Range;\n/** Only request ranges advertised by Camera2. */\npublic final class FluidCameraFps {\n    private FluidCameraFps() {}\n    public static Range<Integer> choose(Range<Integer>[] advertised) {\n        return choose(advertised, true);\n    }\n    public static Range<Integer> choose(Range<Integer>[] advertised, boolean smooth60) {\n        if (advertised == null || advertised.length == 0) return null;\n        Range<Integer> best60 = null, best30 = null, closest = null;\n        for (Range<Integer> range : advertised) {\n            if (range == null) continue;\n            int low = range.getLower(), high = range.getUpper();\n            if (low <= 0 || high < low) continue;\n            if (smooth60 && low == 60 && high == 60) return range;\n            if (!smooth60 && low == 30 && high == 30) return range;\n            if (low <= 60 && high >= 60 &&\n                    (best60 == null || low > best60.getLower() ||\n                    (low == best60.getLower() && high < best60.getUpper()))) best60 = range;\n            if (low <= 30 && high >= 30 &&\n                    (best30 == null || high-low < best30.getUpper()-best30.getLower())) best30 = range;\n            if (closest == null || Math.abs(high-30) < Math.abs(closest.getUpper()-30)) closest = range;\n        }\n        return smooth60 && best60 != null ? best60 : best30 != null ? best30 : best60 != null ? best60 : closest;\n    }\n}\n"
 THEME_CHANGES = {
     "public static final int TELEGRAM_COLOR = 0xFF229AF0;": "public static final int TELEGRAM_COLOR = 0xFF16A6A2;",
     "public static final int TELEGRAM_COLOR_TEXT = 0xFF298ACF;": "public static final int TELEGRAM_COLOR_TEXT = 0xFF087C85;",
@@ -66,6 +66,144 @@ FLUIDGLASS_COLORS = {
     "chat_wallpaper": "#ff0b1524"
 }
 
+
+def patch_round_camera_extras(s, camera):
+    """Adds a safe rear-camera switch, a 30/60 FPS toggle, and double-tap flip."""
+    # Camera2 rear switch must close its old session before opening a new one.
+    first = s.index("    private void switchCamera() {")
+    last = s.index("    private void logLegacyCameraSwitchStage(", first)
+    old = s[first:last]
+    # Keep Telegram's original dual-camera and Camera1 paths; replace only
+    # the one-device sequential Camera2 branch, after the outer safeguards.
+    needle = """                if (camera2SessionCurrent != null) {
+                    camera2SessionCurrent.destroy(false);
+                    camera2SessionCurrent = null;
+                    camera2Sessions[isFrontface ? 1 : 0] = null;
+                }
+                camera2SessionCurrent = camera2Sessions[isFrontface ? 0 : 1] = Camera2Session.create(isFrontface, MessagesController.getInstance(UserConfig.selectedAccount).roundVideoSize, MessagesController.getInstance(UserConfig.selectedAccount).roundVideoSize);
+                if (camera2SessionCurrent == null) {
+                    legacyCameraSwitchAwaitingFrame = false;
+                    logLegacyCameraSwitchStage("failed: Camera2Session.create returned null");
+                    return;
+                }
+                camera2SessionCurrent.setRecordingVideo(true);
+                previewSize[0] = new Size(camera2SessionCurrent.getPreviewWidth(), camera2SessionCurrent.getPreviewHeight());
+                cameraThread.setCurrentSession(camera2SessionCurrent);"""
+    if old.count(needle) != 1:
+        raise RuntimeError("Upstream sequential Camera2 switch changed")
+    replacement = """                final Camera2Session oldSession = camera2SessionCurrent;
+                final boolean targetFront = isFrontface;
+                cameraReady = false;
+                fluidSwitchingCamera = true;
+                camera2SessionCurrent = null;
+                camera2Sessions[targetFront ? 1 : 0] = null;
+                Runnable openNewCamera = () -> {
+                    if (cancelled || cameraThread == null || isFrontface != targetFront) {
+                        fluidSwitchingCamera = false;
+                        return;
+                    }
+                    try {
+                        Camera2Session nextSession = Camera2Session.create(targetFront,
+                                MessagesController.getInstance(UserConfig.selectedAccount).roundVideoSize,
+                                MessagesController.getInstance(UserConfig.selectedAccount).roundVideoSize);
+                        if (nextSession == null) {
+                            fluidSwitchingCamera = false;
+                            legacyCameraSwitchAwaitingFrame = false;
+                            if (!targetFront) {
+                                switchCamera(); // Recover the functioning front lens.
+                            }
+                            return;
+                        }
+                        camera2SessionCurrent = camera2Sessions[targetFront ? 0 : 1] = nextSession;
+                        nextSession.setPrefer60Fps(fluidPrefer60Fps);
+                        nextSession.setRecordingVideo(true);
+                        previewSize[0] = new Size(nextSession.getPreviewWidth(), nextSession.getPreviewHeight());
+                        cameraThread.setCurrentSession(nextSession);
+                        cameraThread.reinitForNewCamera();
+                        // A failed rear open should never leave the client permanently black.
+                        AndroidUtilities.runOnUIThread(() -> {
+                            if (!cancelled && cameraThread != null && !isFrontface
+                                    && camera2SessionCurrent == nextSession && !nextSession.isInitiated()) {
+                                logLegacyCameraSwitchStage("rear camera timeout; restoring front");
+                                switchCamera();
+                            }
+                        }, 3500);
+                    } catch (Exception e) {
+                        FileLog.e(e);
+                        if (!targetFront && cameraThread != null && !cancelled) {
+                            fluidSwitchingCamera = false;
+                            switchCamera();
+                        }
+                    } finally {
+                        fluidSwitchingCamera = false;
+                    }
+                };
+                if (oldSession != null) {
+                    oldSession.destroy(true, openNewCamera);
+                } else {
+                    openNewCamera.run();
+                }
+                return;"""
+    old = old.replace(needle, replacement)
+    s = s[:first] + old + s[last:]
+    # Add new mode UI alongside Telegram's ordinary switch and flash controls.
+    anchor = "        flashButton = new FlashViews.ImageViewInvertable(context);"
+    pill = """        // FluidGram-only feature: choose smoother footage or brighter night shots.
+        fluidPrefer60Fps = getContext().getSharedPreferences("fluidgram_round_camera", Context.MODE_PRIVATE)
+                .getBoolean("prefer_60", true);
+        android.widget.TextView fluidFpsButton = new android.widget.TextView(context);
+        fluidFpsButton.setGravity(Gravity.CENTER);
+        fluidFpsButton.setTextSize(12);
+        fluidFpsButton.setTextColor(Color.WHITE);
+        android.graphics.drawable.GradientDrawable fluidFpsBackground = new android.graphics.drawable.GradientDrawable();
+        fluidFpsBackground.setColor(0xCC123040);
+        fluidFpsBackground.setCornerRadius(dp(18));
+        fluidFpsBackground.setStroke(dp(1), 0x9953D9D0);
+        fluidFpsButton.setBackground(fluidFpsBackground);
+        fluidFpsButton.setText(fluidPrefer60Fps ? "60 FPS" : "LIGHT");
+        fluidFpsButton.setContentDescription("FluidGram camera mode: tap to switch smooth 60 FPS or brighter 30 FPS");
+        buttonsLayout.addView(fluidFpsButton, LayoutHelper.createLinear(64, 44));
+        fluidFpsButton.setOnClickListener(v -> {
+            fluidPrefer60Fps = !fluidPrefer60Fps;
+            getContext().getSharedPreferences("fluidgram_round_camera", Context.MODE_PRIVATE)
+                    .edit().putBoolean("prefer_60", fluidPrefer60Fps).apply();
+            fluidFpsButton.setText(fluidPrefer60Fps ? "60 FPS" : "LIGHT");
+            fluidFpsButton.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+            for (Camera2Session session : camera2Sessions) {
+                if (session != null) session.setPrefer60Fps(fluidPrefer60Fps);
+            }
+            android.widget.Toast.makeText(getContext(),
+                    fluidPrefer60Fps ? "FluidGram: smoother video mode (if supported)"
+                                     : "FluidGram: brighter low-light mode",
+                    android.widget.Toast.LENGTH_SHORT).show();
+        });
+
+"""
+    s = replace_exact(s, anchor, pill + anchor, camera)
+    # Double tap inside round preview: quick camera flip while recording,
+    # preserving the pinch gesture and using the same guarded click handler.
+    anchor_down = "                maybePinchToZoomTouchMode = AndroidUtilities.rectTmp.contains(ev.getX(), ev.getY());"
+    s = replace_exact(s, anchor_down, anchor_down + """
+                if (!maybePinchToZoomTouchMode) lastFluidPreviewTapUptime = 0L;""", camera)
+    anchor_end = """        return true;
+    }
+
+    ValueAnimator finishZoomTransition;"""
+    flip = """        if (ev.getActionMasked() == MotionEvent.ACTION_UP && ev.getPointerCount() == 1
+                && recording && videoPlayer == null && !isInPinchToZoomTouchMode
+                && maybePinchToZoomTouchMode) {
+            long now = SystemClock.uptimeMillis();
+            if (now - lastFluidPreviewTapUptime < 320L) {
+                lastFluidPreviewTapUptime = 0L;
+                switchCameraButton.performClick();
+            } else {
+                lastFluidPreviewTapUptime = now;
+            }
+        }
+"""
+    s = replace_exact(s, anchor_end, flip + anchor_end, camera)
+    return s
+
 def replace_exact(source, old, new, path):
     n = source.count(old)
     if n != 1:
@@ -90,7 +228,7 @@ def apply(root, api_id, api_hash):
     props = root / "gradle.properties"
     def patch_properties(s):
         s = replace_exact(s, "APP_PACKAGE=org.telegram.messenger", "APP_PACKAGE=" + PACKAGE, props)
-        return replace_exact(s, "APP_VERSION_CODE=7237", "APP_VERSION_CODE=7239", props)
+        return replace_exact(s, "APP_VERSION_CODE=7237", "APP_VERSION_CODE=7240", props)
     rewrite(props, patch_properties)
 
     buildvars = root / "TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java"
@@ -105,7 +243,7 @@ def apply(root, api_id, api_hash):
     rewrite(buildvars, patch_vars)
 
     camera = root / "TMessagesProj/src/main/java/org/telegram/ui/Components/InstantCameraView.java"
-    guard = """            if (!cameraReady || !isCameraSessionInitiated() || cameraThread == null || flipAnimationInProgress) {
+    guard = """            if (!cameraReady || !isCameraSessionInitiated() || cameraThread == null || flipAnimationInProgress || fluidSwitchingCamera) {
                 return;
             }
             final long fluidNow = SystemClock.uptimeMillis();
@@ -115,16 +253,23 @@ def apply(root, api_id, api_hash):
             lastFluidSwitchUptime = fluidNow;"""
     def patch_camera(s):
         s = replace_exact(s, "    private volatile boolean cameraReady;",
-                          "    private volatile boolean cameraReady;\n    private long lastFluidSwitchUptime;", camera)
+                          "    private volatile boolean cameraReady;\n    private long lastFluidSwitchUptime;\n    private boolean fluidSwitchingCamera;\n    private boolean fluidPrefer60Fps = true;\n    private long lastFluidPreviewTapUptime;", camera)
         s = replace_exact(s, """            if (!cameraReady || !isCameraSessionInitiated() || cameraThread == null) {
                 return;
             }""", guard, camera)
+        s = replace_exact(s, "            bothCameras = DualCameraView.roundDualAvailableStatic(getContext());",
+                          "            bothCameras = !FluidMotion.isOnePlus15() && DualCameraView.roundDualAvailableStatic(getContext());", camera)
+        s = replace_exact(s, "                            camera2Sessions[a].setRecordingVideo(true);",
+                          "                            camera2Sessions[a].setPrefer60Fps(fluidPrefer60Fps);\\n                            camera2Sessions[a].setRecordingVideo(true);", camera)
+        s = replace_exact(s, "                camera2SessionCurrent.setRecordingVideo(true);",
+                          "                camera2SessionCurrent.setPrefer60Fps(fluidPrefer60Fps);\\n                camera2SessionCurrent.setRecordingVideo(true);", camera)
         s = replace_exact(s, "            valueAnimator.setDuration(580);",
                           "            valueAnimator.setDuration(FluidMotion.cameraFlipDurationMillis());", camera)
         s = replace_exact(s, "            valueAnimator.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);",
                           "            valueAnimator.setInterpolator(FluidMotion.cameraFlipInterpolator());", camera)
-        return replace_exact(s, "                format.setInteger(MediaFormat.KEY_FRAME_RATE, FRAME_RATE);",
-                          "                format.setInteger(MediaFormat.KEY_FRAME_RATE, FluidMotion.videoEncoderFrameRate(videoEncoder, VIDEO_MIME_TYPE, videoWidth, videoHeight));", camera)
+        s = replace_exact(s, "                format.setInteger(MediaFormat.KEY_FRAME_RATE, FRAME_RATE);",
+                          "                format.setInteger(MediaFormat.KEY_FRAME_RATE, FluidMotion.videoEncoderFrameRate(videoEncoder, VIDEO_MIME_TYPE, videoWidth, videoHeight, fluidPrefer60Fps));", camera)
+        return patch_round_camera_extras(s, camera)
     rewrite(camera, patch_camera)
     motion = camera.parent / "FluidMotion.java"
     if motion.exists(): raise RuntimeError("FluidMotion exists already; apply only once")
@@ -133,14 +278,25 @@ def apply(root, api_id, api_hash):
 
     session = root / "TMessagesProj/src/main/java/org/telegram/messenger/camera/Camera2Session.java"
     def patch_session(s):
-        return replace_exact(s,
+        s = replace_exact(s,
             "                captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<Integer>(30, 60));",
             """                final Range<Integer> fluidFpsRange = FluidCameraFps.choose(
                         cameraCharacteristics == null ? null : cameraCharacteristics.get(
-                                CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES));
+                                CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES), prefer60Fps);
                 if (fluidFpsRange != null) {
                     captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fluidFpsRange);
                 }""", session)
+        s = replace_exact(s, "    private boolean recordingVideo;",
+                  """    private boolean prefer60Fps = true;
+    public void setPrefer60Fps(boolean enable) {
+        if (prefer60Fps != enable) {
+            prefer60Fps = enable;
+            updateCaptureRequest();
+        }
+    }
+
+    private boolean recordingVideo;""", session)
+        return s
     rewrite(session, patch_session)
     fps_file = session.parent / "FluidCameraFps.java"
     if fps_file.exists(): raise RuntimeError("FluidCameraFps exists already; apply once")
@@ -206,7 +362,7 @@ def apply(root, api_id, api_hash):
                                 '<item name="android:windowBackground">#0B1524</item>', styles)
         return head + start_tag + section + "</style>" + tail
     rewrite(styles, patch_styles)
-    print("FluidGram v0.3.1 FluidGlass safe-start applied. Install package: " + PACKAGE + ".web")
+    print("FluidGram v0.4 safe camera switch and custom controls applied. Install package: " + PACKAGE + ".web")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

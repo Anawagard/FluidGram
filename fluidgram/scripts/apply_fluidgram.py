@@ -160,7 +160,12 @@ def apply(root, api_id, api_hash):
         for key, color in FLUIDGLASS_COLORS.items():
             pattern = r"(?m)^" + re.escape(key) + r"=.*$"
             s, count = re.subn(pattern, key + "=" + color, s)
-            if count != 1: raise RuntimeError(f"Dark theme key {key}: {count} matches")
+            if count == 0:
+                # Upstream dark asset inherits some colors from defaults.
+                # Add an explicit entry instead of rejecting the theme.
+                s += "\\n" + key + "=" + color + "\\n"
+            elif count != 1:
+                raise RuntimeError(f"Dark theme key {key}: {count} matches")
         return s
     rewrite(dark_asset, patch_dark_asset)
     theme_java = root / "TMessagesProj/src/main/java/org/telegram/ui/ActionBar/Theme.java"

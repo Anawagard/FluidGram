@@ -105,22 +105,31 @@ public final class FluidVpnTunnel {
         return status == Status.CONNECTED;
     }
 
+    /** An uncertain backend state must be cleaned up before loading a new profile. */
+    public static boolean requiresCleanup() {
+        return status == Status.ERROR;
+    }
+
     public static String statusLabel() {
         switch (status) {
             case CONNECTING: return "Подключение…";
             case CONNECTED: return "VPN активен · только FluidGram";
             case DISCONNECTING: return "Отключение…";
-            case ERROR: return "Ошибка VPN · подключение не подтверждено";
+            case ERROR: return "Ошибка VPN · нажмите «Отключить» для очистки";
             default: return "VPN отключён";
         }
     }
 
     /** Must be called from UI only after VpnService.prepare() returns null. */
     public static boolean connect(Context context, Config config, Callback callback) {
-        if (config == null || VpnService.prepare(context) != null) return false;
+        if (config == null) return false;
+        try {
+            if (VpnService.prepare(context) != null) return false;
+        } catch (SecurityException ignored) {
+            return false;
+        }
         synchronized (LOCK) {
-            if (status == Status.CONNECTING || status == Status.DISCONNECTING
-                    || status == Status.CONNECTED) return false;
+            if (status != Status.DISCONNECTED) return false;
             status = Status.CONNECTING;
         }
         Context app = context.getApplicationContext();

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Apply FluidGram v0.9 energy-aware glass Labs ColorOS overlay to pinned Telegram Android checkout."""
+"""Apply FluidGram v1.0 energy instrumentation and glass Labs ColorOS overlay to pinned Telegram Android checkout."""
 import argparse
 import os
 import re
@@ -238,7 +238,7 @@ def apply(root, api_id, api_hash):
     props = root / "gradle.properties"
     def patch_properties(s):
         s = replace_exact(s, "APP_PACKAGE=org.telegram.messenger", "APP_PACKAGE=" + PACKAGE, props)
-        return replace_exact(s, "APP_VERSION_CODE=7237", "APP_VERSION_CODE=7244", props)
+        return replace_exact(s, "APP_VERSION_CODE=7237", "APP_VERSION_CODE=7245", props)
     rewrite(props, patch_properties)
 
     buildvars = root / "TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java"
@@ -353,7 +353,7 @@ def apply(root, api_id, api_hash):
 
 
     labs_dir = Path(__file__).resolve().parents[1] / "android"
-    for name in ("FluidRefresh.java", "FluidLabsActivity.java", "FluidGlass.java"):
+    for name in ("FluidRefresh.java", "FluidLabsActivity.java", "FluidGlass.java", "FluidEnergy.java"):
         original = labs_dir / name
         if not original.is_file():
             raise RuntimeError(f"FluidGram Labs source missing: {original}")
@@ -444,7 +444,7 @@ def apply(root, api_id, api_hash):
                                 '<item name="android:windowBackground">#0B1524</item>', styles)
         return head + start_tag + section + "</style>" + tail
     rewrite(styles, patch_styles)
-    print("FluidGram v0.9 Glass Power Guard applied. Install package: " + PACKAGE + ".web")
+    print("FluidGram v1.0 Energy Lab applied. Install package: " + PACKAGE + ".web")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

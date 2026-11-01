@@ -42,7 +42,8 @@ public final class FluidLabsActivity extends Activity {
         "ColorOS · Автоматически", "Adaptive+ · Высокая плавность",
         "Максимум · совместимый режим", "Умный · экономия при 20%",
         "Adaptive · прокрутка / покой",
-        "165 Гц · касание / прокрутка / покой"
+        "165 Гц · касание / прокрутка / покой",
+        "165 → 144 → Auto · эксперимент LTPO"
     };
     private int dp(float n) { return (int) (n * getResources().getDisplayMetrics().density + .5f); }
     private GradientDrawable background(int first, int second, int radius, boolean border) {
@@ -267,6 +268,18 @@ public final class FluidLabsActivity extends Activity {
                          render();
                      })
                      .setNegativeButton("Отмена", null).show());
+        card("LTPO · тест перехода через 144 Гц",
+            "165 → 144 (250 мс) → ColorOS Auto",
+            "Отдельный экспериментальный профиль. При отсутствии касаний кратко запрашивает "
+                + "144 Гц и снимает запрос. Если ColorOS не вернёт 1 Гц, вернитесь к обычному режиму.",
+            () -> new AlertDialog.Builder(this).setTitle("Эксперимент LTPO")
+                .setMessage("Тестовый переход через 144 Гц может не улучшить расход батареи. "
+                    + "Системные настройки не изменяются, повторные запросы отменяются при касании.")
+                .setPositiveButton("Включить", (dialog, which) -> {
+                    preferences.edit().putInt("refresh_mode", 6).apply();
+                    FluidRefresh.refresh(this);
+                    render();
+                }).setNegativeButton("Отмена", null).show());
         Display d = getWindowManager().getDefaultDisplay();
         card("Экран устройства",
              Math.round(d.getRefreshRate()) + " Гц сейчас  /  до " +
@@ -281,6 +294,36 @@ public final class FluidLabsActivity extends Activity {
                "neon_labs", true);
         toggle("Тактильное переключение", "Короткий виброотклик при смене камеры видеокружка.",
                "camera_haptic", true);
+        section("УВЕДОМЛЕНИЯ  /  TELEGRAM");
+        android.app.NotificationManager notificationManager =
+                (android.app.NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        boolean notificationsEnabled = notificationManager != null
+                && notificationManager.areNotificationsEnabled();
+        android.os.PowerManager notificationPower =
+                (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
+        boolean batteryExempt = notificationPower != null
+                && notificationPower.isIgnoringBatteryOptimizations(getPackageName());
+        card("Доставка уведомлений", notificationsEnabled ? "Разрешены Android" : "Отключены Android",
+            "FluidGram использует оригинальный механизм push Telegram. "
+                + "Для своевременной доставки разрешите уведомления и фоновую работу "
+                + "в ColorOS. Скорость зависит также от сети, FCM и серверов Telegram.",
+            () -> {
+                Intent intent = new Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS);
+                intent.putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, getPackageName());
+                try { startActivity(intent); }
+                catch (Exception error) {
+                    Toast.makeText(this, "Откройте системные настройки уведомлений FluidGram", Toast.LENGTH_LONG).show();
+                }
+            });
+        card("Фоновая работа ColorOS", batteryExempt ? "Исключение из оптимизации включено" : "Оптимизация батареи включена",
+            "Откройте настройки питания и разрешите FluidGram работу в фоне, если сообщения "
+                + "приходят с задержкой. Это увеличит расход батареи. Автоматического обхода ограничений нет.",
+            () -> {
+                try { startActivity(new Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)); }
+                catch (Exception error) {
+                    Toast.makeText(this, "Настройки энергосбережения недоступны", Toast.LENGTH_LONG).show();
+                }
+            });
         section("ЭНЕРГОЭФФЕКТИВНОСТЬ");
         android.os.PowerManager pm = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
         boolean saver = pm != null && pm.isPowerSaveMode();

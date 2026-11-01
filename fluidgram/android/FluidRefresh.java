@@ -45,6 +45,7 @@ public final class FluidRefresh {
     private static ViewTreeObserver.OnScrollChangedListener scrollListener;
     private static Runnable idleReset;
     private static Runnable idleConfirm;
+    private static Runnable idleBridgeRelease;
     // A completed idle report is immutable until the next full 3s/6s
     // observation. Opening/copying the report cannot overwrite it.
     private static Runnable idleProbeThree;
@@ -136,6 +137,7 @@ public final class FluidRefresh {
                 && !isThermallyConstrained(a);
     }
     private static void stopAdaptive() {
+        if (idleBridgeRelease != null) adaptiveHandler.removeCallbacks(idleBridgeRelease);
         cancelIdleProbes();
         if (idleConfirm != null) adaptiveHandler.removeCallbacks(idleConfirm);
         if (vendorPackage != null) {
@@ -152,6 +154,7 @@ public final class FluidRefresh {
         scrollListener = null;
         idleReset = null;
         idleConfirm = null;
+        idleBridgeRelease = null;
         lastScrollHintMs = 0L;
         lastInteractionHintMs = 0L;
     }
@@ -169,7 +172,8 @@ public final class FluidRefresh {
      * ColorOS still controls actual render FPS and LTPO idle; no privileged settings.
      */
     public static void onInteraction(Activity a) {
-        if (a == null || adaptiveOwner != a || prefs(a).getInt("refresh_mode", 4) != 5) return;
+        if (a == null || adaptiveOwner != a || (prefs(a).getInt("refresh_mode", 4) != 5
+                && prefs(a).getInt("refresh_mode", 4) != 6)) return;
         if (!allowHighRefresh(a)) {
             if (idleReset != null) {
                 adaptiveHandler.removeCallbacks(idleReset);
@@ -192,7 +196,9 @@ public final class FluidRefresh {
                     || mode.getPhysicalHeight() != active.getPhysicalHeight()) continue;
             if (best == null || mode.getRefreshRate() > best.getRefreshRate()) best = mode;
         }
-        if (prefs(a).getInt("refresh_mode", 4) == 5) {
+        if (prefs(a).getInt("refresh_mode", 4) == 5
+                || prefs(a).getInt("refresh_mode", 4) == 6) {
+            if (idleBridgeRelease != null) adaptiveHandler.removeCallbacks(idleBridgeRelease);
             if (idleConfirm != null) adaptiveHandler.removeCallbacks(idleConfirm);
             // Never combine a vendor 165 vote with a WindowManager mode pin:
             // releasing just one of the two can leave ColorOS fixed at 120Hz.
@@ -237,7 +243,8 @@ public final class FluidRefresh {
                 + ", vendor=" + FluidOplusRate.diagnostic();
     }
     private static void scheduleIdleProbes(Activity a) {
-        if (prefs(a).getInt("refresh_mode", 4) != 5) return;
+        if (prefs(a).getInt("refresh_mode", 4) != 5
+                && prefs(a).getInt("refresh_mode", 4) != 6) return;
         cancelIdleProbes();
         final int generation = idleProbeGeneration;
         idleProbeThree = () -> {
@@ -273,16 +280,28 @@ public final class FluidRefresh {
         final float max = maxSupportedHz(a);
         idleConfirm = () -> {
             if (adaptiveOwner != a || vendorPackage == null
-                    || prefs(a).getInt("refresh_mode", 4) != 5) return;
+                    || (prefs(a).getInt("refresh_mode", 4) != 5
+                    && prefs(a).getInt("refresh_mode", 4) != 6)) return;
             // Repeat the zero vote only if no new touch/scroll arrived.
             FluidOplusRate.confirmRelease(vendorPackage);
+        };
+        idleBridgeRelease = () -> {
+            if (adaptiveOwner != a || vendorPackage == null) return;
+            FluidOplusRate.release(vendorPackage);
+            adaptiveHandler.removeCallbacks(idleConfirm);
+            adaptiveHandler.postDelayed(idleConfirm, 350);
         };
         idleReset = () -> {
             if (adaptiveOwner != a) return;
             if (vendorPackage != null) {
-                FluidOplusRate.release(vendorPackage);
-                adaptiveHandler.removeCallbacks(idleConfirm);
-                adaptiveHandler.postDelayed(idleConfirm, 350);
+                if (prefs(a).getInt("refresh_mode", 4) == 6
+                        && FluidOplusRate.bridge144(vendorPackage)) {
+                    // Test bridge only; its vote is held for 250ms then withdrawn.
+                    adaptiveHandler.removeCallbacks(idleBridgeRelease);
+                    adaptiveHandler.postDelayed(idleBridgeRelease, 250);
+                } else {
+                    idleBridgeRelease.run();
+                }
             }
             WindowManager.LayoutParams lp = a.getWindow().getAttributes();
             if (lp.preferredRefreshRate != 0f || lp.preferredDisplayModeId != 0) {
@@ -303,7 +322,8 @@ public final class FluidRefresh {
                 idleReset.run();
                 return;
             }
-            if (prefs(a).getInt("refresh_mode", 4) == 5) {
+            if (prefs(a).getInt("refresh_mode", 4) == 5
+                    || prefs(a).getInt("refresh_mode", 4) == 6) {
                 requestInteractiveMode(a);
                 return;
             }
@@ -404,7 +424,8 @@ public final class FluidRefresh {
         // No scroll observer at all when power saver, low charge or thermal guard
         // already prohibit high refresh. System broadcasts restore it when safe.
         if ((prefs(a).getInt("refresh_mode", 4) == 4
-                || prefs(a).getInt("refresh_mode", 4) == 5) && allowHighRefresh(a)) {
+                || prefs(a).getInt("refresh_mode", 4) == 5
+                || prefs(a).getInt("refresh_mode", 4) == 6) && allowHighRefresh(a)) {
             startAdaptive(a);
         }
         boolean keep = prefs(a).getBoolean("keep_screen_on", false);
@@ -438,7 +459,7 @@ public final class FluidRefresh {
         WindowManager.LayoutParams attrs = a.getWindow().getAttributes();
         b.append("Requested Hz: ").append(attrs.preferredRefreshRate).append("\n");
         b.append("Requested mode ID: ").append(attrs.preferredDisplayModeId).append("\n");
-        b.append("Mode 5: 165Hz request on interaction; OS owns actual Hz and idle LTPO\n");
+        b.append("Modes 5/6: 165Hz request on interaction; 6 tests a 144Hz idle bridge; OS owns actual Hz and idle LTPO\n");
         b.append("Oplus vendor: ").append(FluidOplusRate.diagnostic()).append("\n");
         b.append("\n").append(idleReport()).append("\n");
         b.append("HUD: event-driven display mode listener, not measured app FPS\n");

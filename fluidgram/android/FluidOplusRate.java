@@ -13,11 +13,14 @@ import java.lang.reflect.Method;
 public final class FluidOplusRate {
     private static final String IFACE = "com.oplus.screenmode.IOplusScreenMode";
     private static final int RATE_165 = 7;
+    private static final int RATE_144 = 4;
     private static final int RATE_NONE = 0;
     private static boolean requested;
     private static int acceptedVotes;
     private static int successfulReleases;
     private static int failedReleases;
+    private static int transitions144;
+    private static int failures144;
     private static String state = "Не проверено";
     private FluidOplusRate() {}
 
@@ -75,6 +78,16 @@ public final class FluidOplusRate {
         if (requested) acceptedVotes++;
         return requested;
     }
+    /** Diagnostic only: 144Hz bridge between the 165 vote and normal auto mode.
+     * Never leave the bridge active after the transition timer.
+     */
+    public static boolean bridge144(String packageName) {
+        if (!requested) return false;
+        boolean ok = call(packageName, RATE_144);
+        if (ok) transitions144++;
+        else failures144++;
+        return ok;
+    }
     public static void release(String packageName) {
         if (requested) {
             if (call(packageName, RATE_NONE)) {
@@ -101,6 +114,8 @@ public final class FluidOplusRate {
         return state + "; запрос активен: " + requested
                 + "; принятых 165: " + acceptedVotes
                 + "; сбросов: " + successfulReleases
-                + "; ошибок сброса: " + failedReleases;
+                + "; ошибок сброса: " + failedReleases
+                + "; переходов 144: " + transitions144
+                + "; ошибок перехода: " + failures144;
     }
 }

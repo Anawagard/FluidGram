@@ -69,3 +69,17 @@ def test_copy_preserves_completed_snapshot():
     assert 'FluidRefresh.idleReport()' in labs
     assert 'Снимок LTPO через 3 и 6 секунд' in labs
     assert 'completedIdleReport' not in labs
+
+def test_mode_six_uses_short_bridge_and_cancels_on_touch():
+    vendor = (BASE / "android/FluidOplusRate.java").read_text()
+    assert 'RATE_144 = 4' in vendor
+    assert 'FluidOplusRate.bridge144(vendorPackage)' in refresh
+    assert 'postDelayed(idleBridgeRelease, 250)' in refresh
+    assert 'removeCallbacks(idleBridgeRelease)' in refresh
+    assert '165 → 144 → Auto' in labs
+
+def test_notification_settings_preserve_telegram_push():
+    assert 'ACTION_APP_NOTIFICATION_SETTINGS' in labs
+    assert 'areNotificationsEnabled()' in labs
+    assert 'ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS' in labs
+    assert 'FirebaseMessagingService' not in labs

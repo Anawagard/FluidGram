@@ -15,6 +15,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Display;
 import android.widget.ScrollView;
+import android.widget.HorizontalScrollView;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -25,6 +26,8 @@ import android.view.HapticFeedbackConstants;
 /** FluidGram Labs — standalone, theme-independent experimental control center. */
 public final class FluidLabsActivity extends Activity {
     private LinearLayout root;
+    private ScrollView labsScroll;
+    private final java.util.Map<String, View> sectionAnchors = new java.util.HashMap<>();
     private FluidGlass.Backdrop glassBackdrop;
     private SharedPreferences preferences;
     private boolean neon;
@@ -214,6 +217,8 @@ public final class FluidLabsActivity extends Activity {
     private void render() {
         neon = preferences.getBoolean("neon_labs", true);
         ScrollView scroll = new ScrollView(this);
+        labsScroll = scroll;
+        sectionAnchors.clear();
         scroll.setFillViewport(true);
         scroll.setBackgroundColor(Color.TRANSPARENT);
         root = new LinearLayout(this);
@@ -242,7 +247,8 @@ public final class FluidLabsActivity extends Activity {
         hero.addView(headline, margins(10));
         TextView desc = text("Стеклянные слои, световые отражения и плавность с контролем расхода энергии.", 14, 0xFFC6DBE7, false);
         hero.addView(desc);
-        root.addView(hero, margins(24));
+        root.addView(hero, margins(15));
+        root.addView(quickNavigation(), margins(22));
 
         section("ЭКРАН  /  ADAPTIVE REFRESH");
         int mode = preferences.getInt("refresh_mode", 4);
@@ -429,10 +435,59 @@ public final class FluidLabsActivity extends Activity {
         footer.setPadding(dp(8), dp(12), dp(8), dp(3));
         root.addView(footer);
     }
+    /** One-shot, accessible ColorOS-style navigation; no polling or animation loop. */
+    private View quickNavigation() {
+        HorizontalScrollView rail = new HorizontalScrollView(this);
+        rail.setHorizontalScrollBarEnabled(false);
+        rail.setFillViewport(false);
+        LinearLayout chips = new LinearLayout(this);
+        chips.setOrientation(LinearLayout.HORIZONTAL);
+        chips.setPadding(dp(2), dp(2), dp(2), dp(2));
+        String[][] destinations = {
+            {"Экран", "ЭКРАН  /  ADAPTIVE REFRESH"},
+            {"Уведомления", "УВЕДОМЛЕНИЯ  /  TELEGRAM"},
+            {"Энергия", "ЭНЕРГОЭФФЕКТИВНОСТЬ"},
+            {"VPN", "VPN · WIREGUARD"},
+            {"Диагностика", "ДИАГНОСТИКА  /  COLOROS"}
+        };
+        for (String[] destination : destinations) {
+            TextView chip = text(destination[0], 14, ACCENT, true);
+            chip.setGravity(Gravity.CENTER);
+            chip.setMinHeight(dp(48));
+            chip.setPadding(dp(17), dp(10), dp(17), dp(10));
+            GradientDrawable pill = new GradientDrawable();
+            pill.setColor(0xB0274558);
+            pill.setCornerRadius(dp(24));
+            pill.setStroke(dp(1), 0x7795C9D9);
+            chip.setBackground(new android.graphics.drawable.RippleDrawable(
+                    android.content.res.ColorStateList.valueOf(0x44FFFFFF), pill, null));
+            chip.setFocusable(true);
+            chip.setContentDescription("Перейти к разделу " + destination[0]);
+            chip.setOnClickListener(v -> jumpToSection(destination[1]));
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-2, -2);
+            params.rightMargin = dp(9);
+            chips.addView(chip, params);
+        }
+        rail.addView(chips);
+        return rail;
+    }
+
+    private void jumpToSection(String title) {
+        View anchor = sectionAnchors.get(title);
+        ScrollView current = labsScroll;
+        if (anchor == null || current == null) return;
+        current.post(() -> {
+            // Ignore a queued click if render() has already replaced the layout.
+            if (current != labsScroll || anchor.getParent() != root) return;
+            current.smoothScrollTo(0, Math.max(0, anchor.getTop() - dp(12)));
+        });
+    }
+
     private void section(String title) {
         TextView t = text(title, 12, ACCENT, true);
         t.setPadding(dp(4), dp(6), dp(4), dp(11));
         root.addView(t);
+        sectionAnchors.put(title, t);
     }
     private void card(String heading, String value, String description, Runnable click) {
         LinearLayout panel = new LinearLayout(this);

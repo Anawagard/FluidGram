@@ -1,0 +1,33 @@
+import unittest
+from pathlib import Path
+
+LABS = (Path(__file__).resolve().parents[1] / "android/FluidLabsActivity.java").read_text(encoding="utf-8")
+
+class ColorOSQuickNavigationTests(unittest.TestCase):
+    def test_five_real_section_targets(self):
+        for title in (
+            "ЭКРАН  /  ADAPTIVE REFRESH",
+            "УВЕДОМЛЕНИЯ  /  TELEGRAM",
+            "ЭНЕРГОЭФФЕКТИВНОСТЬ",
+            "VPN · WIREGUARD",
+            "ДИАГНОСТИКА  /  COLOROS",
+        ):
+            self.assertIn('section("' + title + '")', LABS)
+            self.assertIn('"' + title + '"}', LABS)
+
+    def test_accessible_one_shot_jump(self):
+        for token in (
+            "HorizontalScrollView rail = new HorizontalScrollView(this);",
+            "chip.setMinHeight(dp(48));",
+            "chip.setContentDescription(",
+            "chip.setFocusable(true);",
+            "sectionAnchors.clear();",
+            "sectionAnchors.put(title, t);",
+            "if (current != labsScroll || anchor.getParent() != root) return;",
+            "current.smoothScrollTo(0, Math.max(0, anchor.getTop() - dp(12)));",
+        ):
+            self.assertIn(token, LABS)
+        self.assertNotIn("postDelayed(", LABS.split("private View quickNavigation()", 1)[1].split("private void card(", 1)[0])
+
+if __name__ == "__main__":
+    unittest.main()

@@ -100,9 +100,12 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon :TMessagesProj_AppStandalone:assembleAfatStandalone
-      - name: Record APK checksum
+      - name: Record and verify APK SHA-256
         if: steps.gate.outputs.enabled == 'true'
-        run: sha256sum Telegram/TMessagesProj_AppStandalone/build/outputs/apk/afat/standalone/*.apk > FluidGram-APK-SHA256.txt
+        run: |
+          sha256sum Telegram/TMessagesProj_AppStandalone/build/outputs/apk/afat/standalone/*.apk > FluidGram-APK-SHA256.txt
+          sha256sum --check FluidGram-APK-SHA256.txt
+          cat FluidGram-APK-SHA256.txt
       - name: Upload APK
         if: steps.gate.outputs.enabled == 'true'
         uses: actions/upload-artifact@v4

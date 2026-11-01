@@ -20,7 +20,7 @@ class GlassLabsRegression(unittest.TestCase):
     def test_overlay_includes_glass(self):
         source = (ROOT / "scripts" / "apply_fluidgram.py").read_text()
         self.assertIn('"FluidGlass.java"', source)
-        self.assertIn("APP_VERSION_CODE=7243", source)
+        self.assertIn("APP_VERSION_CODE=7244", source)
 
     def test_refresh_hud_is_event_driven_and_releases_listener(self):
         source = (ROOT / "android" / "FluidRefresh.java").read_text()
@@ -44,6 +44,34 @@ class GlassLabsRegression(unittest.TestCase):
         self.assertIn("Не измеряет FPS приложения", source)
         self.assertIn("Энергетический профиль", source)
         self.assertNotIn("Adaptive 1–165", source)
+
+    def test_background_releases_display_hints(self):
+        source = (ROOT / "android" / "FluidRefresh.java").read_text()
+        self.assertIn("releaseRefreshHint(a);", source)
+        self.assertIn("lp.preferredDisplayModeId = 0;", source)
+        self.assertIn("clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)", source)
+        self.assertIn("if (setting != 0 && !allowHighRefresh(a)) setting = 0;", source)
+
+    def test_scroll_events_are_throttled(self):
+        source = (ROOT / "android" / "FluidRefresh.java").read_text()
+        self.assertIn("now - lastScrollHintMs < 100L", source)
+        self.assertIn("lastScrollHintMs = 0L;", source)
+        self.assertIn("removeOnScrollChangedListener(scrollListener)", source)
+
+    def test_power_saver_events_restore_automatic_mode(self):
+        source = (ROOT / "android" / "FluidRefresh.java").read_text()
+        self.assertIn("PowerManager.ACTION_POWER_SAVE_MODE_CHANGED", source)
+        self.assertIn("a.registerReceiver(powerReceiver", source)
+        self.assertIn("powerOwner.unregisterReceiver(powerReceiver)", source)
+        self.assertIn("lastPowerCheckMs = 0L;", source)
+        self.assertIn("refresh(a);", source)
+
+    def test_glass_reacts_to_battery_and_cleans_up(self):
+        source = (ROOT / "android" / "FluidLabsActivity.java").read_text()
+        self.assertIn("Intent.ACTION_BATTERY_CHANGED", source)
+        self.assertIn("ACTION_POWER_SAVE_MODE_CHANGED", source)
+        self.assertIn("unregisterReceiver(batteryReceiver)", source)
+        self.assertIn("FluidGlass.setAmbientBlur(glassBackdrop, allowGlassBlur())", source)
 
 if __name__ == "__main__":
     unittest.main()

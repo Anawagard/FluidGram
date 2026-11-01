@@ -34,6 +34,11 @@ public final class FluidRefresh {
     private static long lastPowerCheckMs;
     private static boolean highRefreshAllowed;
     private static int lastBatteryGuardState = -1;
+    // Cached while a foreground Activity owns the listener: no thermal binder call per scroll.
+    private static PowerManager thermalManager;
+    private static PowerManager.OnThermalStatusChangedListener thermalListener;
+    private static boolean thermalKnown;
+    private static boolean thermalHot;
     private static final Handler adaptiveHandler = new Handler(Looper.getMainLooper());
     private static Activity adaptiveOwner;
     private static View adaptiveDecor;
@@ -63,6 +68,13 @@ public final class FluidRefresh {
         int level = state.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
         int scale = state.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
         return level < 0 || scale <= 0 ? 100 : level * 100 / scale;
+    }
+    /** Android 10+ thermal policy: severe or higher yields control to ColorOS. */
+    public static boolean isThermallyConstrained(Context c) {
+        if (android.os.Build.VERSION.SDK_INT < 29) return false;
+        if (thermalKnown) return thermalHot;
+        PowerManager pm = (PowerManager) c.getSystemService(Context.POWER_SERVICE);
+        return pm != null && pm.getCurrentThermalStatus() >= PowerManager.THERMAL_STATUS_SEVERE;
     }
     /** 0 system/ColorOS auto; 1 high FPS hint; 2 highest compatible mode;
         3 high FPS hint with low battery fallback; 4 scroll-only adaptive hint. */
@@ -107,7 +119,8 @@ public final class FluidRefresh {
         // Power saver is cheap to query and must take effect immediately,
         // even if the sticky battery reading is cached for 15 seconds.
         PowerManager pm = (PowerManager) a.getSystemService(Context.POWER_SERVICE);
-        return highRefreshAllowed && (pm == null || !pm.isPowerSaveMode());
+        return highRefreshAllowed && (pm == null || !pm.isPowerSaveMode())
+                && !isThermallyConstrained(a);
     }
     private static void stopAdaptive() {
         if (idleReset != null) adaptiveHandler.removeCallbacks(idleReset);
@@ -200,10 +213,38 @@ public final class FluidRefresh {
             IntentFilter filter = new IntentFilter(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED);
             filter.addAction(Intent.ACTION_BATTERY_CHANGED);
             a.registerReceiver(powerReceiver, filter);
+            if (android.os.Build.VERSION.SDK_INT >= 29) {
+                thermalManager = (PowerManager) a.getSystemService(Context.POWER_SERVICE);
+                if (thermalManager != null) {
+                    thermalHot = thermalManager.getCurrentThermalStatus()
+                            >= PowerManager.THERMAL_STATUS_SEVERE;
+                    thermalKnown = true;
+                    thermalListener = status -> a.runOnUiThread(() -> {
+                        if (powerOwner != a) return;
+                        boolean hot = status >= PowerManager.THERMAL_STATUS_SEVERE;
+                        if (thermalKnown && thermalHot == hot) return;
+                        thermalHot = hot;
+                        thermalKnown = true;
+                        refresh(a); // Release high-refresh hints promptly; restore only when safe.
+                        if (a instanceof FluidLabsActivity) {
+                            ((FluidLabsActivity) a).updateGlassThermalPolicy();
+                        }
+                    });
+                    thermalManager.addThermalStatusListener(thermalListener);
+                }
+            }
         }
         refresh(a);
     }
     private static void stopPowerListener() {
+        if (android.os.Build.VERSION.SDK_INT >= 29
+                && thermalManager != null && thermalListener != null) {
+            thermalManager.removeThermalStatusListener(thermalListener);
+        }
+        thermalManager = null;
+        thermalListener = null;
+        thermalKnown = false;
+        thermalHot = false;
         if (powerOwner != null && powerReceiver != null) {
             powerOwner.unregisterReceiver(powerReceiver);
         }
@@ -242,6 +283,7 @@ public final class FluidRefresh {
         b.append("Battery: ").append(batteryPercent(a)).append("%\n");
         PowerManager pm = (PowerManager) a.getSystemService(Context.POWER_SERVICE);
         b.append("System power saver: ").append(pm != null && pm.isPowerSaveMode()).append("\n");
+        b.append("Thermal guard severe+: ").append(isThermallyConstrained(a)).append("\n");
         WindowManager.LayoutParams attrs = a.getWindow().getAttributes();
         b.append("Requested Hz: ").append(attrs.preferredRefreshRate).append("\n");
         b.append("Requested mode ID: ").append(attrs.preferredDisplayModeId).append("\n");

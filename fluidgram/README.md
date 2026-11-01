@@ -1,8 +1,10 @@
-# FluidGram v1.3 — VPN DNS and dual-stack audit / Energy Lab / ColorOS 17 glass
+# FluidGram v1.4 — thermal-aware glass and adaptive refresh / VPN audit / Energy Lab
 
 Unofficial Telegram Android build for OnePlus 15 / ColorOS 17. Overlay is applied to pinned upstream Telegram at `3de37c8cfb039452be7398909461da6288babf15`.
 
 ## What is implemented
+
+- **Thermal guard (v1.4):** on Android 10+ severe-or-higher system thermal status releases high-refresh requests and disables the decorative Labs blur. A foreground-only `PowerManager.OnThermalStatusChangedListener` restores the selected mode when the device cools; it is unregistered on pause. No temperature polling or per-frame callbacks. This is a protective policy, not a measured battery or temperature improvement. The Android thermal service may report different thresholds across devices.
 
 - **Glass rendering optimization (v1.1):** glass-panel gradients, reflective paths, and ambient backdrop shaders are cached until bounds/size changes instead of allocated on every draw; redundant RenderEffect updates are suppressed. No per-frame loops. Battery savings still require device measurements.
 - **Glass Labs:** translucent glass surfaces, static specular highlights, decorative ambient blur on Android 12+, fallback without blur. Blur is suspended when the Labs activity is paused, the battery is at or below 20%, or Android power saver is enabled.
@@ -26,6 +28,6 @@ A functional built-in VPN client remains under investigation. A real tunnel requ
 
 ## Build and verification
 
-GitHub Actions runs unit/regression checks and the pinned-upstream overlay check, then builds a signed APK when the required private build secrets are present. Artifact: `FluidGram-OnePlus15-v13-VPN-Profile-Audit`, containing APK and `FluidGram-APK-SHA256.txt`. A passing source test is not proof of device-specific refresh rate or measured power reduction.
+GitHub Actions runs unit/regression checks and the pinned-upstream overlay check, then builds a signed APK when the required private build secrets are present. Artifact: `FluidGram-OnePlus15-v14-Thermal-Glass-Guard`, containing APK and `FluidGram-APK-SHA256.txt`. A passing source test is not proof of device-specific refresh rate or measured power reduction.
 
 The package is `dev.fluidgram.oneplus15.web`; versionCode `7248`. GPL-2.0-or-later, based on official Telegram sources.

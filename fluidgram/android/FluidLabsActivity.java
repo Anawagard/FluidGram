@@ -49,7 +49,8 @@ public final class FluidLabsActivity extends Activity {
                     android.os.PowerManager pm = (android.os.PowerManager)
                             getSystemService(Context.POWER_SERVICE);
                     boolean enabled = level * 100 / scale > 20
-                            && (pm == null || !pm.isPowerSaveMode());
+                            && (pm == null || !pm.isPowerSaveMode())
+                            && !FluidRefresh.isThermallyConstrained(this);
                     FluidGlass.setAmbientBlur(glassBackdrop, enabled);
                     return;
                 }
@@ -142,11 +143,17 @@ public final class FluidLabsActivity extends Activity {
         }
     }
 
+    // Called only when Android reports a thermal threshold transition.
+    void updateGlassThermalPolicy() {
+        if (glassBackdrop != null) FluidGlass.setAmbientBlur(glassBackdrop, allowGlassBlur());
+    }
+
     private boolean allowGlassBlur() {
         android.os.PowerManager power = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
         return (cachedBatteryPercent >= 0 ? cachedBatteryPercent
                 : FluidRefresh.batteryPercent(this)) > 20
-                && (power == null || !power.isPowerSaveMode());
+                && (power == null || !power.isPowerSaveMode())
+                && !FluidRefresh.isThermallyConstrained(this);
     }
     private TextView text(String content, int sp, int color, boolean bold) {
         TextView v = new TextView(this);
@@ -186,7 +193,7 @@ public final class FluidLabsActivity extends Activity {
         hero.setPadding(dp(21), dp(22), dp(21), dp(23));
         hero.setBackground(FluidGlass.surface(this, true));
         hero.setElevation(dp(8));
-        TextView eyebrow = text("FLUIDGRAM  /  GLASS LABS  1.3", 12, 0xFFB6FFEE, true);
+        TextView eyebrow = text("FLUIDGRAM  /  GLASS LABS  1.4", 12, 0xFFB6FFEE, true);
         hero.addView(eyebrow, margins(9));
         TextView headline = text("Живое стекло.\nТвой Telegram.", 27, Color.WHITE, true);
         hero.addView(headline, margins(10));
@@ -225,9 +232,11 @@ public final class FluidLabsActivity extends Activity {
         boolean saver = pm != null && pm.isPowerSaveMode();
         int charge = cachedBatteryPercent >= 0 ? cachedBatteryPercent
                 : FluidRefresh.batteryPercent(this);
+        boolean hot = FluidRefresh.isThermallyConstrained(this);
         card("Энергетический профиль", charge + "% · " +
-                (saver ? "энергосбережение Android" : "обычный режим"),
-            "Все режимы повышенной частоты отключают запрос при ≤20% или энергосбережении. При уходе из приложения запрос снимается. Экономия требует измерений.", null);
+                (saver ? "энергосбережение Android" : "обычный режим")
+                + (hot ? " · ТЕРМОЗАЩИТА" : ""),
+            "При ≤20%, системном энергосбережении или сильном нагреве Android (severe+) отключаются запросы повышенной частоты и размытие Glass Labs. Возврат автоматический; экономия требует измерений.", null);
         section("ENERGY LAB  /  БЕЗ ФОНОВОГО ОПРОСА");
         card("Измерение заряда устройства", "Снимок по запросу",
             "Сравнивай показания до и после использования. Датчик учитывает весь телефон, а не только FluidGram. Никаких таймеров и фонового мониторинга.",

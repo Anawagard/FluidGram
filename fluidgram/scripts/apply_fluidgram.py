@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Apply FluidGram v1.3 VPN profile audit and energy instrumentation and glass Labs ColorOS overlay to pinned Telegram Android checkout."""
+"""Apply FluidGram v1.4 thermal-aware glass and refresh guard, VPN profile audit and Energy Lab overlay to pinned Telegram Android checkout."""
 import argparse
 import os
 import re
@@ -444,7 +444,7 @@ def apply(root, api_id, api_hash):
                                 '<item name="android:windowBackground">#0B1524</item>', styles)
         return head + start_tag + section + "</style>" + tail
     rewrite(styles, patch_styles)
-    print("FluidGram v1.3 VPN DNS and dual-stack audit applied. Install package: " + PACKAGE + ".web")
+    print("FluidGram v1.4 thermal-aware glass and refresh guard applied. Install package: " + PACKAGE + ".web")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

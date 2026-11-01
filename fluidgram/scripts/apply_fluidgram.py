@@ -399,19 +399,16 @@ def apply(root, api_id, api_hash):
         FluidRefresh.pause(this);
         super.onPause();
         isResumed = false;""", launcher)
+        # Upstream Telegram already implements onUserInteraction(). Amend it instead
+        # of inserting another override (which breaks javac).
         return replace_exact(src,
-            """    protected void onResume() {
-        super.onResume();
-        FluidRefresh.resume(this);""",
-            """    @Override
-    public void onUserInteraction() {
+            """    public void onUserInteraction() {
+        super.onUserInteraction();
+        voipLaunchedInBackground = false;""",
+            """    public void onUserInteraction() {
         super.onUserInteraction();
         FluidRefresh.onInteraction(this);
-    }
-
-    protected void onResume() {
-        super.onResume();
-        FluidRefresh.resume(this);""", launcher)
+        voipLaunchedInBackground = false;""", launcher)
     rewrite(launcher, patch_launcher)
 
     # The custom Labs screen is not exported outside FluidGram.

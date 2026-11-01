@@ -23,3 +23,8 @@ def test_guards_and_activity_lifecycle():
 def test_diagnostics_disclaims_guarantee():
     assert 'OS owns actual Hz and idle LTPO' in refresh
     assert 'не может гарантировать' in labs
+
+def test_patch_existing_upstream_interaction_instead_of_duplicate():
+    assert 'voipLaunchedInBackground = false;' in patch
+    assert 'return replace_exact(src,\n            """    public void onUserInteraction()' in patch
+    assert '"""    @Override\n    public void onUserInteraction()' not in patch

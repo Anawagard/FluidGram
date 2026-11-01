@@ -97,5 +97,14 @@ class GlassLabsRegression(unittest.TestCase):
         self.assertIn('"FluidEnergy.java"', patch)
         self.assertIn("GLASS LABS  1.0", labs)
 
+    def test_battery_threshold_is_event_driven_and_coalesced(self):
+        source = (ROOT / "android" / "FluidRefresh.java").read_text()
+        self.assertIn("filter.addAction(Intent.ACTION_BATTERY_CHANGED)", source)
+        self.assertIn("if (state == lastBatteryGuardState) return;", source)
+        self.assertIn("lastBatteryGuardState = state;", source)
+        self.assertIn("lastBatteryGuardState = -1;", source)
+        self.assertIn("level * 100 / scale > 20", source)
+        self.assertIn("lastPowerCheckMs = SystemClock.elapsedRealtime();", source)
+
 if __name__ == "__main__":
     unittest.main()

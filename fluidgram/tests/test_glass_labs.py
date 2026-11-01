@@ -87,6 +87,9 @@ class GlassLabsRegression(unittest.TestCase):
         self.assertIn("intent.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1)", source)
         self.assertIn("intent.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1)", source)
         self.assertIn("if (glassBackdrop == null) return;", source)
+        self.assertIn("cachedBatteryPercent = level * 100 / scale;", source)
+        self.assertIn("cachedBatteryPercent = -1;", source)
+        self.assertIn("cachedBatteryPercent >= 0 ? cachedBatteryPercent", source)
 
     def test_energy_lab_is_on_demand_without_background_sampling(self):
         source = (ROOT / "android" / "FluidEnergy.java").read_text()

@@ -18,7 +18,7 @@ Unofficial Telegram Android build for OnePlus 15 / ColorOS 17. Overlay is applie
 - A separate card opens Android system VPN settings to manage an independently installed VPN. No VPN service is started by FluidGram and no traffic is routed through FluidGram. The UI explicitly marks built-in connection unavailable.
 - The import feature is foreground-only, with no polling, wake locks, background service, or network activity. This avoids introducing new idle battery drain.
 
-**Energy and privacy:** Profile inspection runs only after user file selection; no periodic network checks, no background VPN service, and no stored credentials. Route coverage and address-family flags are only static configuration hints, never proof of a leak-free connection.
+**Energy and privacy:** While Labs is visible, the last Android battery broadcast is reused for glass policy and energy-card rendering; the cached percentage is cleared on pause. Profile inspection runs only after user file selection; no periodic network checks, no background VPN service, and no stored credentials. Route coverage and address-family flags are only static configuration hints, never proof of a leak-free connection.
 
 ## Planned, not yet implemented
 

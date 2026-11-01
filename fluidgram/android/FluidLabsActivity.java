@@ -33,6 +33,8 @@ public final class FluidLabsActivity extends Activity {
     private static final int VPN_IMPORT_REQUEST = 17011;
     private String vpnImportSummary = "Профиль ещё не проверен";
     private boolean batteryReceiverRegistered;
+    // Cached only while visible; avoid repeated sticky battery queries on UI rerenders.
+    private int cachedBatteryPercent = -1;
     // Event-driven glass policy: no polling or per-frame battery work.
     private final BroadcastReceiver batteryReceiver = new BroadcastReceiver() {
         @Override public void onReceive(Context context, Intent intent) {
@@ -43,6 +45,7 @@ public final class FluidLabsActivity extends Activity {
                 int level = intent.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1);
                 int scale = intent.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1);
                 if (level >= 0 && scale > 0) {
+                    cachedBatteryPercent = level * 100 / scale;
                     android.os.PowerManager pm = (android.os.PowerManager)
                             getSystemService(Context.POWER_SERVICE);
                     boolean enabled = level * 100 / scale > 20
@@ -95,6 +98,7 @@ public final class FluidLabsActivity extends Activity {
             batteryReceiverRegistered = false;
         }
         if (glassBackdrop != null) FluidGlass.setAmbientBlur(glassBackdrop, false);
+        cachedBatteryPercent = -1;
         FluidRefresh.pause(this);
         super.onPause();
     }
@@ -140,7 +144,8 @@ public final class FluidLabsActivity extends Activity {
 
     private boolean allowGlassBlur() {
         android.os.PowerManager power = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
-        return FluidRefresh.batteryPercent(this) > 20
+        return (cachedBatteryPercent >= 0 ? cachedBatteryPercent
+                : FluidRefresh.batteryPercent(this)) > 20
                 && (power == null || !power.isPowerSaveMode());
     }
     private TextView text(String content, int sp, int color, boolean bold) {
@@ -218,7 +223,8 @@ public final class FluidLabsActivity extends Activity {
         section("ЭНЕРГОЭФФЕКТИВНОСТЬ");
         android.os.PowerManager pm = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
         boolean saver = pm != null && pm.isPowerSaveMode();
-        int charge = FluidRefresh.batteryPercent(this);
+        int charge = cachedBatteryPercent >= 0 ? cachedBatteryPercent
+                : FluidRefresh.batteryPercent(this);
         card("Энергетический профиль", charge + "% · " +
                 (saver ? "энергосбережение Android" : "обычный режим"),
             "Все режимы повышенной частоты отключают запрос при ≤20% или энергосбережении. При уходе из приложения запрос снимается. Экономия требует измерений.", null);

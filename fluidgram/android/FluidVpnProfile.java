@@ -138,7 +138,7 @@ public final class FluidVpnProfile {
     /** Strict ASCII hostname, not a URL, path, wildcard or malformed numeric IP. */
     private static boolean isHostname(String value) {
         if (value.isEmpty() || value.length() > 253 || value.matches("[0-9.]+")) return false;
-        for (String label : value.split("\\\\.", -1)) {
+        for (String label : value.split("\\.", -1)) {
             if (label.isEmpty() || label.length() > 63) return false;
             if (!isAsciiAlnum(label.charAt(0)) || !isAsciiAlnum(label.charAt(label.length() - 1)))
                 return false;

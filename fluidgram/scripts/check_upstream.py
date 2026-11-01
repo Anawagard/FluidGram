@@ -8,6 +8,7 @@ from apply_fluidgram import UPSTREAM_SHA, PACKAGE, apply
 FILES = (
     "gradle.properties",
     "TMessagesProj/build.gradle",
+    "TMessagesProj_AppStandalone/build.gradle",
     "TMessagesProj/src/main/java/org/telegram/ui/ActionBar/Theme.java",
     "TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java",
     "TMessagesProj/src/main/java/org/telegram/ui/LaunchActivity.java",
@@ -87,7 +88,7 @@ def verify():
         assert "MAX_CONFIG_BYTES = 64 * 1024" in vpn
         assert "ipv4Default && ipv6Default" in vpn
         assert "Это НЕ проверка подключения" in labs
-        assert "FluidVpnProfile.inspect(input)" in labs
+        assert "FluidVpnTunnel.importProfile(input, getPackageName())" in labs
         assert "FluidGram (unofficial)" in (root / "TMessagesProj/src/main/res/values/strings.xml").read_text(encoding="utf8")
         print("OK: applied to pinned source; no APK compiled, no private credentials")
 

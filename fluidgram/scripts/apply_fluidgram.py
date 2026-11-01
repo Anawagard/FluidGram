@@ -353,7 +353,7 @@ def apply(root, api_id, api_hash):
 
 
     labs_dir = Path(__file__).resolve().parents[1] / "android"
-    for name in ("FluidRefresh.java", "FluidOplusRate.java", "FluidLabsActivity.java", "FluidGlass.java", "FluidEnergy.java", "FluidVpnProfile.java", "FluidVpnTunnel.java", "FluidVlessProfile.java"):
+    for name in ("FluidRefresh.java", "FluidOplusRate.java", "FluidLabsActivity.java", "FluidGlass.java", "FluidEnergy.java", "FluidVpnProfile.java", "FluidVpnTunnel.java", "FluidVlessProfile.java", "FluidPrivacy.java"):
         original = labs_dir / name
         if not original.is_file():
             raise RuntimeError(f"FluidGram Labs source missing: {original}")
@@ -410,6 +410,26 @@ def apply(root, api_id, api_hash):
         FluidRefresh.onInteraction(this);
         voipLaunchedInBackground = false;""", launcher)
     rewrite(launcher, patch_launcher)
+
+    # Intercept only ordinary typing RPCs, not read receipts, recording, upload,
+    # online state or secret-chat traffic. This is the final Java RPC dispatch
+    # before serialization, so all call sites share the same opt-in policy.
+    connections = root / "TMessagesProj/src/main/java/org/telegram/tgnet/ConnectionsManager.java"
+    rewrite(connections, lambda src: replace_exact(src,
+        """    private void sendRequestInternal(TLObject object, RequestDelegate onComplete, RequestDelegateTimestamp onCompleteTimestamp, QuickAckDelegate onQuickAck, WriteToSocketDelegate onWriteToSocket, int flags, int datacenterId, int connectionType, boolean immediate, int requestToken) {
+        if (BuildVars.LOGS_ENABLED) {""",
+        """    private void sendRequestInternal(TLObject object, RequestDelegate onComplete, RequestDelegateTimestamp onCompleteTimestamp, QuickAckDelegate onQuickAck, WriteToSocketDelegate onWriteToSocket, int flags, int datacenterId, int connectionType, boolean immediate, int requestToken) {
+        if (FluidPrivacy.shouldSuppressTyping(object)) {
+            // No native_sendRequest: this typing event never reaches Telegram.
+            // Return a local success so typing throttles can clear normally.
+            Utilities.stageQueue.postRunnable(() -> {
+                if (onComplete != null) onComplete.run(new TLRPC.TL_boolTrue(), null);
+                else if (onCompleteTimestamp != null)
+                    onCompleteTimestamp.run(new TLRPC.TL_boolTrue(), null, 0L);
+            });
+            return;
+        }
+        if (BuildVars.LOGS_ENABLED) {""", connections))
 
     # The custom Labs screen is not exported outside FluidGram.
     manifest = root / "TMessagesProj/config/release/AndroidManifest_standalone.xml"

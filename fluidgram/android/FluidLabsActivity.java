@@ -300,6 +300,12 @@ public final class FluidLabsActivity extends Activity {
                "neon_labs", true);
         toggle("Тактильное переключение", "Короткий виброотклик при смене камеры видеокружка.",
                "camera_haptic", true);
+        section("ПРИВАТНОСТЬ  /  GHOST LAB");
+        toggle("Не показывать «печатает…»",
+               "Опционально блокирует исходящие Telegram messages.setTyping с действием typing "
+               + "до отправки в сеть. Не скрывает прочтение, онлайн, запись, загрузку "
+               + "или действия в секретных чатах. Другие устройства могут показывать статус.",
+               "ghost_hide_typing", false);
         section("УВЕДОМЛЕНИЯ  /  TELEGRAM");
         android.app.NotificationManager notificationManager =
                 (android.app.NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);

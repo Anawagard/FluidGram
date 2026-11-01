@@ -353,7 +353,7 @@ def apply(root, api_id, api_hash):
 
 
     labs_dir = Path(__file__).resolve().parents[1] / "android"
-    for name in ("FluidRefresh.java", "FluidLabsActivity.java", "FluidGlass.java", "FluidEnergy.java", "FluidVpnProfile.java", "FluidVpnTunnel.java", "FluidVlessProfile.java"):
+    for name in ("FluidRefresh.java", "FluidOplusRate.java", "FluidLabsActivity.java", "FluidGlass.java", "FluidEnergy.java", "FluidVpnProfile.java", "FluidVpnTunnel.java", "FluidVlessProfile.java"):
         original = labs_dir / name
         if not original.is_file():
             raise RuntimeError(f"FluidGram Labs source missing: {original}")

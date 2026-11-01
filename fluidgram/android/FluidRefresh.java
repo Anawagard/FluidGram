@@ -21,7 +21,6 @@ import android.view.View;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.ViewTreeObserver;
-import android.view.MotionEvent;
 
 /** FluidGram display hints: Android/ColorOS remains the final refresh-rate arbiter. */
 public final class FluidRefresh {
@@ -47,6 +46,7 @@ public final class FluidRefresh {
     private static Runnable idleReset;
     private static long lastScrollHintMs;
     private static long lastInteractionHintMs;
+    private static String vendorPackage;
     private FluidRefresh() {}
     public static SharedPreferences prefs(Context c) {
         return c.getSharedPreferences(PREF, Context.MODE_PRIVATE);
@@ -125,6 +125,10 @@ public final class FluidRefresh {
                 && !isThermallyConstrained(a);
     }
     private static void stopAdaptive() {
+        if (vendorPackage != null) {
+            FluidOplusRate.release(vendorPackage);
+            vendorPackage = null;
+        }
         if (idleReset != null) adaptiveHandler.removeCallbacks(idleReset);
         if (adaptiveDecor != null && scrollListener != null
                 && adaptiveDecor.getViewTreeObserver().isAlive()) {
@@ -174,6 +178,10 @@ public final class FluidRefresh {
                     || mode.getPhysicalHeight() != active.getPhysicalHeight()) continue;
             if (best == null || mode.getRefreshRate() > best.getRefreshRate()) best = mode;
         }
+        if (prefs(a).getInt("refresh_mode", 4) == 5) {
+            vendorPackage = a.getPackageName();
+            FluidOplusRate.request(vendorPackage);
+        }
         if (best != null) {
             WindowManager.LayoutParams lp = a.getWindow().getAttributes();
             if (lp.preferredDisplayModeId != best.getModeId()) {
@@ -193,6 +201,7 @@ public final class FluidRefresh {
         final float max = maxSupportedHz(a);
         idleReset = () -> {
             if (adaptiveOwner != a) return;
+            if (vendorPackage != null) FluidOplusRate.release(vendorPackage);
             WindowManager.LayoutParams lp = a.getWindow().getAttributes();
             if (lp.preferredRefreshRate != 0f || lp.preferredDisplayModeId != 0) {
                 lp.preferredRefreshRate = 0f;
@@ -348,6 +357,7 @@ public final class FluidRefresh {
         b.append("Requested Hz: ").append(attrs.preferredRefreshRate).append("\n");
         b.append("Requested mode ID: ").append(attrs.preferredDisplayModeId).append("\n");
         b.append("Mode 5: 165Hz request on interaction; OS owns actual Hz and idle LTPO\n");
+        b.append("Oplus vendor: ").append(FluidOplusRate.diagnostic()).append("\n");
         b.append("HUD: event-driven display mode listener, not measured app FPS\n");
         b.append(FluidEnergy.report(a)).append("\n");
         if (android.os.Build.VERSION.SDK_INT >= 23) {

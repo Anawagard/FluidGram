@@ -28,3 +28,17 @@ def test_patch_existing_upstream_interaction_instead_of_duplicate():
     assert 'voipLaunchedInBackground = false;' in patch
     assert 'return replace_exact(src,\n            """    public void onUserInteraction()' in patch
     assert '"""    @Override\n    public void onUserInteraction()' not in patch
+
+def test_vendor_uses_firmware_proxy_not_guessed_binder_transactions():
+    vendor = (BASE / "android/FluidOplusRate.java").read_text(encoding="utf-8")
+    assert 'requestGameRefreshRate' in vendor
+    assert 'RATE_165 = 7' in vendor
+    assert 'RATE_NONE = 0' in vendor
+    assert 'candidate.getParameterTypes()' in vendor
+    assert 'binder.transact(' not in vendor
+    assert 'return requested;' in vendor
+
+def test_vendor_release_during_idle_and_pause():
+    assert 'FluidOplusRate.request(vendorPackage)' in refresh
+    assert 'FluidOplusRate.release(vendorPackage)' in refresh
+    assert 'if (adaptiveOwner == a) stopAdaptive();' in refresh

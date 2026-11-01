@@ -179,8 +179,14 @@ public final class FluidRefresh {
             if (best == null || mode.getRefreshRate() > best.getRefreshRate()) best = mode;
         }
         if (prefs(a).getInt("refresh_mode", 4) == 5) {
+            // Never combine a vendor 165 vote with a WindowManager mode pin:
+            // releasing just one of the two can leave ColorOS fixed at 120Hz.
             vendorPackage = a.getPackageName();
+            releaseRefreshHint(a);
             FluidOplusRate.request(vendorPackage);
+            adaptiveHandler.removeCallbacks(idleReset);
+            adaptiveHandler.postDelayed(idleReset, 1200);
+            return;
         }
         if (best != null) {
             WindowManager.LayoutParams lp = a.getWindow().getAttributes();

@@ -42,3 +42,9 @@ def test_vendor_release_during_idle_and_pause():
     assert 'FluidOplusRate.request(vendorPackage)' in refresh
     assert 'FluidOplusRate.release(vendorPackage)' in refresh
     assert 'if (adaptiveOwner == a) stopAdaptive();' in refresh
+
+def test_vendor_mode_does_not_pin_android_display_mode():
+    branch = refresh.split('if (prefs(a).getInt("refresh_mode", 4) == 5) {', 2)[1]
+    assert 'releaseRefreshHint(a);' in branch
+    assert 'FluidOplusRate.request(vendorPackage);' in branch
+    assert 'return;' in branch.split('if (best != null)', 1)[0]

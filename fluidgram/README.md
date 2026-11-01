@@ -42,7 +42,9 @@ instructions. This is *app-specific VPN*, not a system-wide VPN.
   profiles are not retained after Labs is destroyed. No server picker beyond
   importing another profile, no built-in network diagnostics or auto-reconnect.
   If the VPN drops, ordinary app networking may resume unless Android's
-  always-on VPN lockdown is configured. This feature is not a kill switch.
+  always-on VPN lockdown is configured. **Caution:** lockdown combined with
+  app-only VPN routing may block networking for other applications.
+  This feature is not a kill switch.
   Android allows only one VPN provider at a time; enabling FluidGram VPN may
   replace another VPN.
 - **Testing:** `test_vpn_tunnel.py` compiles the real controller with
@@ -64,4 +66,4 @@ connectivity until those device measurements succeed.**
 
 GitHub Actions runs unit/regression checks and the pinned-upstream overlay check, then builds a signed APK when the required private build secrets are present. Artifact: `FluidGram-OnePlus15-v16-WireGuard-Glass`, containing APK and `FluidGram-APK-SHA256.txt`. A passing source test is not proof of device-specific refresh rate or measured power reduction.
 
-The package is `dev.fluidgram.oneplus15.web`; versionCode `7248`. GPL-2.0-or-later, based on official Telegram sources.
+The package is `dev.fluidgram.oneplus15.web`; versionCode `7248`; minSdk 24 (WireGuard library requirement). GPL-2.0-or-later, based on official Telegram sources.

@@ -53,7 +53,7 @@ public final class FluidVpnProfileSmoke {
             if (!valid) throw new AssertionError("Unsafe profile accepted: " + mode);
             if (info.peers != (mode.equals("multi") ? 2 : 1) || !info.hasDns)
                 throw new AssertionError("Wrong metadata: " + mode);
-            if (info.fullTunnel != (mode.equals("valid") || mode.equals("ipv6endpoint") || mode.equals("multi")))
+            if (info.fullTunnel != !(mode.equals("split") || mode.equals("ipv4only") || mode.equals("ipv6only")))
                 throw new AssertionError("Full tunnel misclassified: " + mode);
             if (info.ipv4Default != !(mode.equals("split") || mode.equals("ipv6only")))
                 throw new AssertionError("IPv4 default misclassified");

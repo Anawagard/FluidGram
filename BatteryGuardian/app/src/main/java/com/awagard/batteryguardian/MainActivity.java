@@ -153,7 +153,9 @@ public class MainActivity extends Activity {
     @SuppressWarnings("deprecation")
     private String command(String... a)throws Exception{
       String[] args=new String[a.length+1];args[0]="/system/bin/"+a[0];System.arraycopy(a,1,args,1,a.length);
-      ShizukuRemoteProcess p=Shizuku.newProcess(args,null,null);
+      java.lang.reflect.Method method=Shizuku.class.getDeclaredMethod("newProcess",String[].class,String[].class,String.class);
+      method.setAccessible(true);
+      ShizukuRemoteProcess p=(ShizukuRemoteProcess)method.invoke(null,args,null,null);
       String output=read(p.getInputStream()), err=read(p.getErrorStream());
       int code=p.waitFor();p.destroy();
       if(code!=0)throw new IOException("код "+code+" "+err);

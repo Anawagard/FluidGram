@@ -8,6 +8,10 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+# Only build the newest commit; superseded overlay commits need no APK.
+concurrency:
+  group: fluidgram-apk-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   validate:
     runs-on: ubuntu-latest

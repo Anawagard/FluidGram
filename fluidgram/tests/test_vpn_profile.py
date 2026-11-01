@@ -1,4 +1,4 @@
-"""Compile and execute the actual Java WireGuard preflight parser using the CI JDK."""
+"""Compile and exercise the actual Java WireGuard preflight parser on CI JDK."""
 import subprocess
 import tempfile
 import unittest
@@ -12,23 +12,46 @@ import java.nio.charset.StandardCharsets;
 public final class FluidVpnProfileSmoke {
     private static String profile() {
         return "[Interface]\nPrivateKey = " + "A".repeat(43) + "=\nAddress = 10.1.2.3/32\nDNS = 1.1.1.1\n" +
-               "[Peer]\nPublicKey = " + "B".repeat(43) + "=\nEndpoint = example.com:51820\nAllowedIPs = 0.0.0.0/0, ::/0\n";
+               "[Peer]\nPublicKey = " + "B".repeat(42) + "A=\nEndpoint = example.com:51820\nAllowedIPs = 0.0.0.0/0, ::/0\n";
     }
     public static void main(String[] args) throws Exception {
+        String mode = args.length == 0 ? "valid" : args[0];
         String src = profile();
-        if (args.length > 0 && args[0].equals("bad")) src = src.replace("PrivateKey", "NotAKey");
-        if (args.length > 0 && args[0].equals("large")) src += "#" + "Z".repeat(66000);
-        if (args.length > 0 && args[0].equals("noendpoint")) src = src.replace("Endpoint", "NotEndpoint");
-        if (args.length > 0 && args[0].equals("split")) src = src.replace("0.0.0.0/0, ::/0", "10.0.0.0/8");
+        switch (mode) {
+            case "bad": src = src.replace("PrivateKey", "NotAKey"); break;
+            case "badpadding": src = src.replace("B".repeat(42) + "A=", "B".repeat(43) + "="); break;
+            case "large": src += "#" + "Z".repeat(66000); break;
+            case "noendpoint": src = src.replace("Endpoint", "NotEndpoint"); break;
+            case "split": src = src.replace("0.0.0.0/0, ::/0", "10.0.0.0/8"); break;
+            case "ipv4only": src = src.replace("0.0.0.0/0, ::/0", "0.0.0.0/0"); break;
+            case "ipv6only": src = src.replace("0.0.0.0/0, ::/0", "::/0"); break;
+            case "badroute": src = src.replace("0.0.0.0/0, ::/0", "999.2.3.4/55"); break;
+            case "badaddress": src = src.replace("10.1.2.3/32", "10.1.2.999/32"); break;
+            case "badport": src = src.replace(":51820", ":65536"); break;
+            case "unsafe": src += "PostUp = echo unsafe\n"; break;
+            case "duplicate": src = src.replace("Address = ", "PrivateKey = " + "A".repeat(43) + "=\nAddress = "); break;
+            case "ipv6endpoint": src = src.replace("example.com:51820", "[2001:db8::1]:51820"); break;
+            case "multi": src += "[Peer]\nPublicKey = " + "C".repeat(42) + "A=\nEndpoint = peer.example:1234\nAllowedIPs = 10.0.0.0/8\n"; break;
+        }
+        boolean valid = mode.equals("valid") || mode.equals("split") ||
+                mode.equals("ipv4only") || mode.equals("ipv6only") ||
+                mode.equals("ipv6endpoint") || mode.equals("multi");
         try {
             FluidVpnProfile.Info info = FluidVpnProfile.inspect(new ByteArrayInputStream(src.getBytes(StandardCharsets.UTF_8)));
-            if (args.length == 0 && (info.peers != 1 || !info.hasDns || !info.fullTunnel)) throw new AssertionError("Invalid metadata");
-            if (args.length > 0 && args[0].equals("split") && info.fullTunnel) throw new AssertionError("Wrong route");
-            if (args.length > 0 && !args[0].equals("split")) throw new AssertionError("Invalid profile accepted");
+            if (!valid) throw new AssertionError("Unsafe profile accepted: " + mode);
+            if (info.peers != (mode.equals("multi") ? 2 : 1) || !info.hasDns)
+                throw new AssertionError("Wrong metadata: " + mode);
+            if (info.fullTunnel != (mode.equals("valid") || mode.equals("ipv6endpoint") || mode.equals("multi")))
+                throw new AssertionError("Full tunnel misclassified: " + mode);
+            if (info.ipv4Default != !(mode.equals("split") || mode.equals("ipv6only")))
+                throw new AssertionError("IPv4 default misclassified");
+            if (info.ipv6Default != !(mode.equals("split") || mode.equals("ipv4only")))
+                throw new AssertionError("IPv6 default misclassified");
             System.out.println("OK");
         } catch (FluidVpnProfile.InvalidProfile e) {
-            if (args.length == 0 || args[0].equals("split")) throw e;
-            if (e.getMessage().contains("AAAA") || e.getMessage().contains("BBBB")) throw new AssertionError("Credential leaked");
+            if (valid) throw e;
+            if (e.getMessage().contains("AAAA") || e.getMessage().contains("BBBB"))
+                throw new AssertionError("Credential leaked");
             System.out.println("REJECTED");
         }
     }
@@ -57,9 +80,19 @@ class WireGuardPreflight(unittest.TestCase):
 
     def test_valid_profile_metadata_only(self): self.check(None, "OK")
     def test_reject_missing_private_key(self): self.check("bad", "REJECTED")
+    def test_reject_noncanonical_key_padding(self): self.check("badpadding", "REJECTED")
     def test_reject_oversized_profile(self): self.check("large", "REJECTED")
     def test_reject_peer_without_endpoint(self): self.check("noendpoint", "REJECTED")
     def test_split_tunnel_not_mislabelled(self): self.check("split", "OK")
+    def test_ipv4_only_is_not_full_tunnel(self): self.check("ipv4only", "OK")
+    def test_ipv6_only_is_not_full_tunnel(self): self.check("ipv6only", "OK")
+    def test_reject_invalid_allowed_ips(self): self.check("badroute", "REJECTED")
+    def test_reject_invalid_interface_address(self): self.check("badaddress", "REJECTED")
+    def test_reject_invalid_endpoint_port(self): self.check("badport", "REJECTED")
+    def test_reject_unsupported_shell_directive(self): self.check("unsafe", "REJECTED")
+    def test_reject_duplicate_private_key(self): self.check("duplicate", "REJECTED")
+    def test_accept_numeric_ipv6_endpoint(self): self.check("ipv6endpoint", "OK")
+    def test_accept_multiple_peers(self): self.check("multi", "OK")
 
     def test_no_persistence_or_background_work(self):
         source = (ROOT / "android" / "FluidVpnProfile.java").read_text()
@@ -68,6 +101,7 @@ class WireGuardPreflight(unittest.TestCase):
         self.assertNotIn("WakeLock", source)
         self.assertNotIn("VpnService", source)  # no fake tunnel or permission prompt
         self.assertIn("Arrays.fill(raw, (byte) 0)", source)
+        self.assertIn("ipv4Default && ipv6Default", source)
         labs = (ROOT / "android" / "FluidLabsActivity.java").read_text()
         self.assertIn("Intent.ACTION_OPEN_DOCUMENT", labs)
         self.assertIn("FluidVpnProfile.inspect(input)", labs)

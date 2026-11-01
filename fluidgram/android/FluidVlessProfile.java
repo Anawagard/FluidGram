@@ -32,9 +32,24 @@ public final class FluidVlessProfile {
             throw new IllegalArgumentException("Транспорт пока не поддерживается");
         if (!security.equals("tls") && !security.equals("reality"))
             throw new IllegalArgumentException("Требуется TLS или REALITY");
-        if (security.equals("reality") && (uri.getQueryParameter("pbk")==null
-                || uri.getQueryParameter("sni")==null))
-            throw new IllegalArgumentException("REALITY: отсутствует pbk или sni");
+        if (security.equals("reality")) {
+            if (!"tcp".equals(transport))
+                throw new IllegalArgumentException("REALITY: в первой версии поддерживается TCP");
+            String pbk = uri.getQueryParameter("pbk");
+            String sni = uri.getQueryParameter("sni");
+            String sid = uri.getQueryParameter("sid");
+            String fp = uri.getQueryParameter("fp");
+            if (pbk == null || !pbk.matches("[A-Za-z0-9_-]{43}"))
+                throw new IllegalArgumentException("REALITY: неверный публичный ключ pbk");
+            if (sni == null || sni.isEmpty() || sni.length() > 253
+                    || !sni.matches("[A-Za-z0-9.-]+") || sni.startsWith("."))
+                throw new IllegalArgumentException("REALITY: неверный sni");
+            if (sid != null && (!sid.matches("[0-9a-fA-F]{0,16}")
+                    || sid.length() % 2 != 0))
+                throw new IllegalArgumentException("REALITY: неверный shortId");
+            if (fp == null || !fp.matches("[A-Za-z0-9_-]{1,32}"))
+                throw new IllegalArgumentException("REALITY: неверный fingerprint");
+        }
         return new Info(uri.getHost(),port,transport,security);
     }
 }

@@ -29,6 +29,9 @@ public final class FluidLabsActivity extends Activity {
     private SharedPreferences preferences;
     private boolean neon;
     private static final int VPN_IMPORT_REQUEST = 17011;
+    private static final int VPN_PERMISSION_REQUEST = 17012;
+    // Imported profile exists in RAM only; never saved in preferences or a Bundle.
+    private com.wireguard.config.Config pendingVpnConfig;
     private String vpnImportSummary = "Профиль ещё не проверен";
     // Cached only while visible; shared with FluidRefresh's single power receiver.
     private int cachedBatteryPercent = -1;
@@ -68,11 +71,18 @@ public final class FluidLabsActivity extends Activity {
     }
     @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == VPN_PERMISSION_REQUEST) {
+            if (resultCode == RESULT_OK) connectApprovedVpn();
+            else Toast.makeText(this, "Разрешение Android на VPN не предоставлено", Toast.LENGTH_LONG).show();
+            return;
+        }
         if (requestCode != VPN_IMPORT_REQUEST || resultCode != RESULT_OK
                 || data == null || data.getData() == null) return;
         // User-selected URI is read once. No persistable permission or secret storage.
         try (java.io.InputStream input = getContentResolver().openInputStream(data.getData())) {
-            FluidVpnProfile.Info info = FluidVpnProfile.inspect(input);
+            FluidVpnTunnel.Imported imported = FluidVpnTunnel.importProfile(input, getPackageName());
+            pendingVpnConfig = imported.config;
+            FluidVpnProfile.Info info = imported.info;
             String coverage = info.fullTunnel ? "IPv4 и IPv6 · оба маршрута /0"
                     : info.ipv4Default ? "только IPv4 /0 · IPv6 вне полного маршрута"
                     : info.ipv6Default ? "только IPv6 /0 · IPv4 вне полного маршрута"
@@ -83,18 +93,24 @@ public final class FluidLabsActivity extends Activity {
                        : info.fullTunnel ? " · ВНИМАНИЕ: отсутствует адрес одного из IP-семейств"
                        : " · выборочная маршрутизация")
                     + ". Это НЕ проверка подключения или защиты от утечек.";
-            Toast.makeText(this, "Формат профиля проверен. VPN не подключён.", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Профиль проверен. Для подключения нужно согласие Android.", Toast.LENGTH_LONG).show();
         } catch (FluidVpnProfile.InvalidProfile invalid) {
+            pendingVpnConfig = null;
             // These messages are fixed parser strings and never contain private keys.
             vpnImportSummary = "Проверка не пройдена: " + invalid.getMessage();
         } catch (Exception ignored) {
             // Never log file contents, paths, provider errors or credentials.
-            vpnImportSummary = "Не удалось прочитать конфигурацию";
+            pendingVpnConfig = null;
+            vpnImportSummary = "Не удалось прочитать или проверить конфигурацию";
         }
         render();
     }
 
     private void openVpnFile() {
+        if (FluidVpnTunnel.isConnected() || FluidVpnTunnel.isBusy()) {
+            Toast.makeText(this, "Сначала отключите текущий VPN", Toast.LENGTH_SHORT).show();
+            return;
+        }
         Intent pick = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         pick.addCategory(Intent.CATEGORY_OPENABLE);
         pick.setType("*/*");
@@ -104,6 +120,49 @@ public final class FluidLabsActivity extends Activity {
         } catch (android.content.ActivityNotFoundException ignored) {
             Toast.makeText(this, "Системный выбор файлов недоступен", Toast.LENGTH_LONG).show();
         }
+    }
+
+    private void requestVpnConnect() {
+        if (pendingVpnConfig == null) {
+            Toast.makeText(this, "Сначала импортируйте профиль WireGuard", Toast.LENGTH_LONG).show();
+            return;
+        }
+        if (FluidVpnTunnel.isBusy() || FluidVpnTunnel.isConnected()) return;
+        Intent consent = android.net.VpnService.prepare(this);
+        if (consent != null) {
+            try {
+                startActivityForResult(consent, VPN_PERMISSION_REQUEST);
+            } catch (android.content.ActivityNotFoundException ignored) {
+                Toast.makeText(this, "Системное разрешение VPN недоступно", Toast.LENGTH_LONG).show();
+            }
+        } else {
+            connectApprovedVpn();
+        }
+    }
+
+    private void connectApprovedVpn() {
+        if (pendingVpnConfig == null) return;
+        if (FluidVpnTunnel.connect(this, pendingVpnConfig, success -> {
+            if (success) pendingVpnConfig = null; // Do not retain duplicate key references.
+            if (!isFinishing() && !isDestroyed()) render();
+            Toast.makeText(getApplicationContext(),
+                    success ? "VPN запущен · только FluidGram" : "Не удалось запустить VPN",
+                    Toast.LENGTH_LONG).show();
+        })) render();
+    }
+
+    private void stopVpn() {
+        if (FluidVpnTunnel.disconnect(success -> {
+            if (!isFinishing() && !isDestroyed()) render();
+            Toast.makeText(getApplicationContext(),
+                    success ? "VPN отключён" : "Не удалось отключить VPN",
+                    Toast.LENGTH_LONG).show();
+        })) render();
+    }
+
+    @Override protected void onDestroy() {
+        pendingVpnConfig = null;
+        super.onDestroy();
     }
 
     /** Reuse FluidRefresh's foreground power receiver instead of registering a second one. */
@@ -162,7 +221,7 @@ public final class FluidLabsActivity extends Activity {
         hero.setPadding(dp(21), dp(22), dp(21), dp(23));
         hero.setBackground(FluidGlass.surface(this, true));
         hero.setElevation(dp(8));
-        TextView eyebrow = text("FLUIDGRAM  /  GLASS LABS  1.5", 12, 0xFFB6FFEE, true);
+        TextView eyebrow = text("FLUIDGRAM  /  GLASS LABS  1.6", 12, 0xFFB6FFEE, true);
         hero.addView(eyebrow, margins(9));
         TextView headline = text("Живое стекло.\nТвой Telegram.", 27, Color.WHITE, true);
         hero.addView(headline, margins(10));
@@ -227,14 +286,23 @@ public final class FluidLabsActivity extends Activity {
                 FluidEnergy.reset(this);
                 Toast.makeText(this, "Новая точка отсчёта сохранена", Toast.LENGTH_SHORT).show();
             });
-        section("VPN · аудит профиля");
+        section("VPN · WIREGUARD");
+        card("Состояние VPN", FluidVpnTunnel.statusLabel(),
+            "Встроенный WireGuard (официальный движок). Только трафик FluidGram; другие приложения не маршрутизируются. "
+            + "Состояние туннеля не доказывает доступность сервера или отсутствие утечек.", null);
         card("Импорт WireGuard .conf", vpnImportSummary,
-            "Проверка маршрутов, DNS, IPv4/IPv6 адресов и ключей без подключения. Секретные ключи не сохраняются. "
-            + "Файл ограничен 64 КиБ; серверы не предоставляются.",
+            "Один пользовательский профиль, до 64 КиБ. Ключи хранятся только в оперативной памяти до отключения. "
+            + "Никаких встроенных серверов, фоновых проверок или сохранения конфигураций.",
             this::openVpnFile);
-        card("Встроенное подключение", "Пока недоступно · туннель не создан",
-            "Для реального подключения нужен проверенный VPN-движок, системное согласие Android "
-            + "и ваш сервер или профиль. Импорт сам по себе не защищает трафик.", null);
+        card("Подключить VPN", pendingVpnConfig != null ? "Профиль загружен · требуется согласие Android"
+                : "Импортируйте профиль для подключения",
+            "Android запросит системное разрешение на VPN. Для работы нужен ваш действующий WireGuard-сервер. "
+            + "Подключение выполняется по запросу, без автозапуска.",
+            this::requestVpnConnect);
+        card("Отключить VPN", "Остановить активный туннель",
+            "При отключении VPN-трафик FluidGram возвращается в обычную сеть. "
+            + "Для блокировки трафика без VPN используйте системный Always-on VPN с блокировкой.",
+            this::stopVpn);
         card("VPN-настройки Android", "Открыть системные настройки",
             "Для управления уже установленными VPN-приложениями на телефоне.",
             () -> {

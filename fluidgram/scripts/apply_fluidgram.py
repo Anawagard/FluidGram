@@ -353,7 +353,7 @@ def apply(root, api_id, api_hash):
 
 
     labs_dir = Path(__file__).resolve().parents[1] / "android"
-    for name in ("FluidRefresh.java", "FluidOplusRate.java", "FluidLabsActivity.java", "FluidGlass.java", "FluidEnergy.java", "FluidVpnProfile.java", "FluidVpnTunnel.java", "FluidVlessProfile.java", "FluidPrivacy.java"):
+    for name in ("FluidRefresh.java", "FluidOplusRate.java", "FluidLabsActivity.java", "FluidGlass.java", "FluidEnergy.java", "FluidVpnProfile.java", "FluidVpnTunnel.java", "FluidVlessProfile.java"):
         original = labs_dir / name
         if not original.is_file():
             raise RuntimeError(f"FluidGram Labs source missing: {original}")
@@ -410,6 +410,12 @@ def apply(root, api_id, api_hash):
         FluidRefresh.onInteraction(this);
         voipLaunchedInBackground = false;""", launcher)
     rewrite(launcher, patch_launcher)
+
+    privacy_source = labs_dir / "FluidPrivacy.java"
+    privacy_dest = root / "TMessagesProj/src/main/java/org/telegram/tgnet/FluidPrivacy.java"
+    if not privacy_source.is_file() or privacy_dest.exists():
+        raise RuntimeError("FluidPrivacy source missing or destination already exists")
+    privacy_dest.write_text(privacy_source.read_text(encoding="utf8"), encoding="utf8")
 
     # Intercept only ordinary typing RPCs, not read receipts, recording, upload,
     # online state or secret-chat traffic. This is the final Java RPC dispatch

@@ -15,6 +15,7 @@ def test_ghost_typing_is_opt_in_and_narrowly_scoped():
 
 def test_outgoing_rpc_intercept_before_serialization():
     assert '"FluidPrivacy.java"' in patch
+    assert 'org/telegram/tgnet/FluidPrivacy.java' in patch
     assert 'FluidPrivacy.shouldSuppressTyping(object)' in patch
     hook = patch.split('if (FluidPrivacy.shouldSuppressTyping(object)) {', 1)[1]
     assert 'return;' in hook.split('if (BuildVars.LOGS_ENABLED)', 1)[0]

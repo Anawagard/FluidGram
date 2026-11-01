@@ -12,6 +12,7 @@ FILES = (
     "TMessagesProj/src/main/java/org/telegram/ui/ActionBar/Theme.java",
     "TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java",
     "TMessagesProj/src/main/java/org/telegram/ui/LaunchActivity.java",
+    "TMessagesProj/src/main/java/org/telegram/tgnet/ConnectionsManager.java",
     "TMessagesProj/src/main/assets/darkblue.attheme",
     "TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java",
     "TMessagesProj/src/main/java/org/telegram/ui/Components/InstantCameraView.java",
@@ -51,6 +52,11 @@ def verify():
         refresh = (root / "TMessagesProj/src/main/java/org/telegram/ui/FluidRefresh.java").read_text(encoding="utf8")
         assert "FluidGram Labs" in settings and "case 27:" in settings
         assert "FluidLabsActivity.class" in settings
+        connections = (root / "TMessagesProj/src/main/java/org/telegram/tgnet/ConnectionsManager.java").read_text(encoding="utf8")
+        privacy = (root / "TMessagesProj/src/main/java/org/telegram/tgnet/FluidPrivacy.java").read_text(encoding="utf8")
+        assert "FluidPrivacy.shouldSuppressTyping(object)" in connections
+        assert "No native_sendRequest" in connections
+        assert "instanceof TLRPC.TL_sendMessageTypingAction" in privacy
         assert "FluidRefresh.resume(this)" in launcher
         assert "FluidRefresh.pause(this)" in launcher
         assert 'android:name="org.telegram.ui.FluidLabsActivity"' in manifest

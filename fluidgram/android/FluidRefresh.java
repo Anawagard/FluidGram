@@ -45,6 +45,16 @@ public final class FluidRefresh {
     private static ViewTreeObserver.OnScrollChangedListener scrollListener;
     private static Runnable idleReset;
     private static Runnable idleConfirm;
+    // A completed idle report is immutable until the next full 3s/6s
+    // observation. Opening/copying the report cannot overwrite it.
+    private static Runnable idleProbeThree;
+    private static Runnable idleProbeSix;
+    private static int idleProbeGeneration;
+    private static String pendingThree;
+    private static String completedIdleReport = "Нет завершённого измерения.\n"
+            + "В режиме 165 Гц коснитесь или прокрутите экран и не трогайте его 6 секунд.";
+    private static long completedAtMs;
+
     private static long lastScrollHintMs;
     private static long lastInteractionHintMs;
     private static String vendorPackage;
@@ -126,6 +136,7 @@ public final class FluidRefresh {
                 && !isThermallyConstrained(a);
     }
     private static void stopAdaptive() {
+        cancelIdleProbes();
         if (idleConfirm != null) adaptiveHandler.removeCallbacks(idleConfirm);
         if (vendorPackage != null) {
             FluidOplusRate.release(vendorPackage);
@@ -190,6 +201,7 @@ public final class FluidRefresh {
             FluidOplusRate.request(vendorPackage);
             adaptiveHandler.removeCallbacks(idleReset);
             adaptiveHandler.postDelayed(idleReset, 1200);
+            scheduleIdleProbes(a);
             return;
         }
         if (best != null) {
@@ -202,6 +214,56 @@ public final class FluidRefresh {
         }
         adaptiveHandler.removeCallbacks(idleReset);
         adaptiveHandler.postDelayed(idleReset, 1200);
+    }
+    /** No polling or rendering; two one-shot measurements of Android's reported
+     * display mode after the last interaction. Touching Copy starts a fresh
+     * probe but does not replace the last completed report.
+     */
+    private static void cancelIdleProbes() {
+        idleProbeGeneration++;
+        if (idleProbeThree != null) adaptiveHandler.removeCallbacks(idleProbeThree);
+        if (idleProbeSix != null) adaptiveHandler.removeCallbacks(idleProbeSix);
+        idleProbeThree = null;
+        idleProbeSix = null;
+        pendingThree = null;
+    }
+    private static String captureIdleSample(Activity a, int seconds) {
+        Display display = a.getWindowManager().getDefaultDisplay();
+        WindowManager.LayoutParams lp = a.getWindow().getAttributes();
+        return "+" + seconds + "с: Android Hz=" + display.getRefreshRate()
+                + ", mode Hz=" + display.getMode().getRefreshRate()
+                + ", requested mode=" + lp.preferredDisplayModeId
+                + ", requested Hz=" + lp.preferredRefreshRate
+                + ", vendor=" + FluidOplusRate.diagnostic();
+    }
+    private static void scheduleIdleProbes(Activity a) {
+        if (prefs(a).getInt("refresh_mode", 4) != 5) return;
+        cancelIdleProbes();
+        final int generation = idleProbeGeneration;
+        idleProbeThree = () -> {
+            if (adaptiveOwner != a || idleProbeGeneration != generation) return;
+            pendingThree = captureIdleSample(a, 3);
+        };
+        idleProbeSix = () -> {
+            if (adaptiveOwner != a || idleProbeGeneration != generation
+                    || pendingThree == null) return;
+            completedIdleReport = "FluidGram LTPO · снимок после бездействия\n"
+                    + pendingThree + "\n"
+                    + captureIdleSample(a, 6) + "\n"
+                    + "Частоты сообщает Android. Фактическую LTPO-частоту "
+                    + "проверяйте системным счётчиком ColorOS.";
+            completedAtMs = SystemClock.elapsedRealtime();
+            idleProbeThree = null;
+            idleProbeSix = null;
+            pendingThree = null;
+        };
+        adaptiveHandler.postDelayed(idleProbeThree, 3000);
+        adaptiveHandler.postDelayed(idleProbeSix, 6000);
+    }
+    public static String idleReport() {
+        if (completedAtMs == 0L) return completedIdleReport;
+        return completedIdleReport + "\nВозраст снимка: "
+                + (SystemClock.elapsedRealtime() - completedAtMs) / 1000L + " с";
     }
     private static void startAdaptive(Activity a) {
         stopAdaptive();
@@ -378,6 +440,7 @@ public final class FluidRefresh {
         b.append("Requested mode ID: ").append(attrs.preferredDisplayModeId).append("\n");
         b.append("Mode 5: 165Hz request on interaction; OS owns actual Hz and idle LTPO\n");
         b.append("Oplus vendor: ").append(FluidOplusRate.diagnostic()).append("\n");
+        b.append("\n").append(idleReport()).append("\n");
         b.append("HUD: event-driven display mode listener, not measured app FPS\n");
         b.append(FluidEnergy.report(a)).append("\n");
         if (android.os.Build.VERSION.SDK_INT >= 23) {

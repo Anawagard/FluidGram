@@ -362,6 +362,19 @@ public final class FluidLabsActivity extends Activity {
                 }
             });
         section("ДИАГНОСТИКА  /  COLOROS");
+        card("Снимок LTPO через 3 и 6 секунд", "Сохранённое измерение без касаний",
+            "В режиме 165 Гц прокрутите экран, затем не касайтесь его 6 секунд. "
+            + "Снимки сохраняются до следующего завершённого измерения. "
+            + "Частоты Android могут отличаться от счётчика LTPO ColorOS.",
+            () -> new AlertDialog.Builder(this)
+                .setTitle("LTPO · измерение покоя")
+                .setMessage(FluidRefresh.idleReport())
+                .setPositiveButton("Скопировать", (dialog, which) -> {
+                    ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                    if (cm != null) cm.setPrimaryClip(ClipData.newPlainText(
+                            "FluidGram LTPO idle report", FluidRefresh.idleReport()));
+                })
+                .setNegativeButton("Закрыть", null).show());
         card("Скопировать режимы экрана", "Отладка 90 / 120 / 165 Гц",
             "Экспортирует только модель устройства, частоты дисплея и выбранный режим. Без переписок и ключей.",
             () -> {

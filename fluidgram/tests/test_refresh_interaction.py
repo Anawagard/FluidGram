@@ -56,3 +56,16 @@ def test_second_zero_vote_is_cancelled_on_new_interaction():
     assert 'adaptiveHandler.postDelayed(idleConfirm, 350);' in refresh
     assert 'FluidOplusRate.confirmRelease(vendorPackage)' in refresh
     assert 'RATE_120' not in vendor
+
+def test_idle_probe_is_snapshot_not_continuous_polling():
+    assert 'postDelayed(idleProbeThree, 3000)' in refresh
+    assert 'postDelayed(idleProbeSix, 6000)' in refresh
+    assert 'idleProbeGeneration != generation' in refresh
+    assert 'cancelIdleProbes();' in refresh
+    assert 'completedIdleReport = "FluidGram LTPO' in refresh
+    assert 'public static String idleReport()' in refresh
+
+def test_copy_preserves_completed_snapshot():
+    assert 'FluidRefresh.idleReport()' in labs
+    assert 'Снимок LTPO через 3 и 6 секунд' in labs
+    assert 'completedIdleReport' not in labs

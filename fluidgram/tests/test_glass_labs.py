@@ -84,6 +84,9 @@ class GlassLabsRegression(unittest.TestCase):
         self.assertIn("ACTION_POWER_SAVE_MODE_CHANGED", source)
         self.assertIn("unregisterReceiver(batteryReceiver)", source)
         self.assertIn("FluidGlass.setAmbientBlur(glassBackdrop, allowGlassBlur())", source)
+        self.assertIn("intent.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1)", source)
+        self.assertIn("intent.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1)", source)
+        self.assertIn("if (glassBackdrop == null) return;", source)
 
     def test_energy_lab_is_on_demand_without_background_sampling(self):
         source = (ROOT / "android" / "FluidEnergy.java").read_text()

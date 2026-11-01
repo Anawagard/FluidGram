@@ -425,11 +425,16 @@ def apply(root, api_id, api_hash):
         s = replace_exact(s, "apply plugin: 'com.google.gms.google-services'",
             "// FluidGram: google-services plugin is applied by AppStandalone only",
             library_gradle)
-        return replace_exact(s, "    implementation 'androidx.core:core:1.16.0'",
+        s = replace_exact(s, "    implementation 'androidx.core:core:1.16.0'",
             "    implementation 'androidx.core:core:1.16.0'\n"
             "    implementation 'com.wireguard.android:tunnel:1.0.20260102'",
             library_gradle)
+        # Official WireGuard 2026 AAR requires Android API 24 minimum.
+        return replace_exact(s, "minSdkVersion 23", "minSdkVersion 24", library_gradle)
     rewrite(library_gradle, patch_library_gradle)
+    app_gradle = root / "TMessagesProj_AppStandalone/build.gradle"
+    rewrite(app_gradle, lambda s: replace_exact(
+        s, "minSdkVersion 23", "minSdkVersion 24", app_gradle))
 
     strings = root / "TMessagesProj/src/main/res/values/strings.xml"
     def patch_strings(s):

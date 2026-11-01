@@ -36,7 +36,22 @@ public final class FluidLabsActivity extends Activity {
     // Event-driven glass policy: no polling or per-frame battery work.
     private final BroadcastReceiver batteryReceiver = new BroadcastReceiver() {
         @Override public void onReceive(Context context, Intent intent) {
-            if (glassBackdrop != null) FluidGlass.setAmbientBlur(glassBackdrop, allowGlassBlur());
+            if (glassBackdrop == null) return;
+            // Battery broadcasts already carry the level. Avoid a second
+            // sticky registerReceiver(null, ...) query for each event.
+            if (intent != null && Intent.ACTION_BATTERY_CHANGED.equals(intent.getAction())) {
+                int level = intent.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1);
+                int scale = intent.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1);
+                if (level >= 0 && scale > 0) {
+                    android.os.PowerManager pm = (android.os.PowerManager)
+                            getSystemService(Context.POWER_SERVICE);
+                    boolean enabled = level * 100 / scale > 20
+                            && (pm == null || !pm.isPowerSaveMode());
+                    FluidGlass.setAmbientBlur(glassBackdrop, enabled);
+                    return;
+                }
+            }
+            FluidGlass.setAmbientBlur(glassBackdrop, allowGlassBlur());
         }
     };
     private static final int BG = 0xFF050A11;

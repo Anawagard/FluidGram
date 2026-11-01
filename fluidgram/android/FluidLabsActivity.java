@@ -168,12 +168,18 @@ public final class FluidLabsActivity extends Activity {
         section("ENERGY LAB  /  БЕЗ ФОНОВОГО ОПРОСА");
         card("Измерение заряда устройства", "Снимок по запросу",
             "Сравнивай показания до и после использования. Датчик учитывает весь телефон, а не только FluidGram. Никаких таймеров и фонового мониторинга.",
-            () -> {
-                ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                if (cm != null) cm.setPrimaryClip(ClipData.newPlainText(
-                        "FluidGram energy report", FluidEnergy.report(this)));
-                Toast.makeText(this, "Энергетический отчёт скопирован", Toast.LENGTH_SHORT).show();
-            });
+            () -> new AlertDialog.Builder(this)
+                    .setTitle("Energy Lab · измерение")
+                    .setMessage(FluidEnergy.report(this))
+                    .setPositiveButton("Скопировать", (dialog, which) -> {
+                        ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                        if (cm != null) {
+                            cm.setPrimaryClip(ClipData.newPlainText(
+                                    "FluidGram energy report", FluidEnergy.report(this)));
+                            Toast.makeText(this, "Энергетический отчёт скопирован", Toast.LENGTH_SHORT).show();
+                        }
+                    })
+                    .setNegativeButton("Закрыть", null).show());
         card("Новая точка отсчёта", "Сбросить измерение",
             "Обнуляет накопленное время и изменение заряда. Не меняет системные настройки батареи.",
             () -> {

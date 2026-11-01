@@ -78,18 +78,24 @@ class GlassLabsRegression(unittest.TestCase):
         self.assertIn("lastPowerCheckMs = 0L;", source)
         self.assertIn("refresh(a);", source)
 
-    def test_glass_reacts_to_battery_and_cleans_up(self):
-        source = (ROOT / "android" / "FluidLabsActivity.java").read_text()
-        self.assertIn("Intent.ACTION_BATTERY_CHANGED", source)
-        self.assertIn("ACTION_POWER_SAVE_MODE_CHANGED", source)
-        self.assertIn("unregisterReceiver(batteryReceiver)", source)
-        self.assertIn("FluidGlass.setAmbientBlur(glassBackdrop, allowGlassBlur())", source)
-        self.assertIn("intent.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1)", source)
-        self.assertIn("intent.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1)", source)
-        self.assertIn("if (glassBackdrop == null) return;", source)
-        self.assertIn("cachedBatteryPercent = level * 100 / scale;", source)
-        self.assertIn("cachedBatteryPercent = -1;", source)
-        self.assertIn("cachedBatteryPercent >= 0 ? cachedBatteryPercent", source)
+    def test_glass_shares_single_power_receiver_with_refresh(self):
+        labs = (ROOT / "android" / "FluidLabsActivity.java").read_text()
+        refresh = (ROOT / "android" / "FluidRefresh.java").read_text()
+        self.assertIn("void updateGlassPowerPolicy(int batteryPercent)", labs)
+        self.assertIn("cachedBatteryPercent = batteryPercent;", labs)
+        self.assertIn("FluidGlass.setAmbientBlur(glassBackdrop, allowGlassBlur())", labs)
+        self.assertIn("FluidGlass.setAmbientBlur(glassBackdrop, false)", labs)
+        self.assertIn("cachedBatteryPercent = -1;", labs)
+        self.assertNotIn("new BroadcastReceiver()", labs)
+        self.assertNotIn("registerReceiver(", labs)
+        self.assertNotIn("unregisterReceiver(", labs)
+        self.assertIn("a.registerReceiver(powerReceiver, filter)", refresh)
+        self.assertIn("powerOwner.unregisterReceiver(powerReceiver)", refresh)
+        self.assertIn("updateGlassPowerPolicy(percent);", refresh)
+        self.assertIn("updateGlassPowerPolicy(-1);", refresh)
+        self.assertIn("if (state == lastBatteryGuardState) return;", refresh)
+        self.assertLess(refresh.index("updateGlassPowerPolicy(percent);"),
+                        refresh.index("if (state == lastBatteryGuardState) return;"))
 
     def test_energy_lab_is_on_demand_without_background_sampling(self):
         source = (ROOT / "android" / "FluidEnergy.java").read_text()
@@ -113,7 +119,7 @@ class GlassLabsRegression(unittest.TestCase):
         self.assertIn("FluidEnergy.report(this)", labs)
         self.assertIn("FluidEnergy.reset(this)", labs)
         self.assertIn('"FluidEnergy.java"', patch)
-        self.assertIn("GLASS LABS  1.4", labs)
+        self.assertIn("GLASS LABS  1.5", labs)
 
     def test_battery_threshold_is_event_driven_and_coalesced(self):
         source = (ROOT / "android" / "FluidRefresh.java").read_text()
@@ -121,7 +127,8 @@ class GlassLabsRegression(unittest.TestCase):
         self.assertIn("if (state == lastBatteryGuardState) return;", source)
         self.assertIn("lastBatteryGuardState = state;", source)
         self.assertIn("lastBatteryGuardState = -1;", source)
-        self.assertIn("level * 100 / scale > 20", source)
+        self.assertIn("int percent = level * 100 / scale;", source)
+        self.assertIn("int state = percent > 20 ? 1 : 0;", source)
         self.assertIn("lastPowerCheckMs = SystemClock.elapsedRealtime();", source)
 
 if __name__ == "__main__":

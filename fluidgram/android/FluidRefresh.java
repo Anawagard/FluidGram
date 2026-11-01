@@ -196,14 +196,22 @@ public final class FluidRefresh {
                         int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
                         int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
                         if (level < 0 || scale <= 0) return;
-                        int state = (level * 100 / scale > 20) ? 1 : 0;
+                        int percent = level * 100 / scale;
+                        int state = percent > 20 ? 1 : 0;
                         highRefreshAllowed = state == 1;
+                        // A single foreground battery receiver drives both refresh and glass.
+                        if (a instanceof FluidLabsActivity) {
+                            ((FluidLabsActivity) a).updateGlassPowerPolicy(percent);
+                        }
                         lastPowerCheckMs = SystemClock.elapsedRealtime();
                         // Avoid reconfiguring the window on every battery broadcast.
                         if (state == lastBatteryGuardState) return;
                         lastBatteryGuardState = state;
                     } else if (PowerManager.ACTION_POWER_SAVE_MODE_CHANGED.equals(action)) {
                         lastPowerCheckMs = 0L;
+                        if (a instanceof FluidLabsActivity) {
+                            ((FluidLabsActivity) a).updateGlassPowerPolicy(-1);
+                        }
                     } else {
                         return;
                     }

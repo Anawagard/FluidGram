@@ -22,6 +22,8 @@ class ThermalGuardRegression(unittest.TestCase):
     def test_glass_blur_respects_thermal_status(self):
         self.assertIn("void updateGlassThermalPolicy()", LABS)
         self.assertIn("!FluidRefresh.isThermallyConstrained(this)", LABS)
+        self.assertNotIn("new BroadcastReceiver()", LABS)
+        self.assertIn("updateGlassPowerPolicy(-1)", LABS)
         self.assertIn("((FluidLabsActivity) a).updateGlassThermalPolicy();", REFRESH)
         self.assertIn("FluidGlass.setAmbientBlur(glassBackdrop, false)", LABS)
 

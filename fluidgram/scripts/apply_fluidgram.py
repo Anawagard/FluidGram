@@ -444,7 +444,7 @@ def apply(root, api_id, api_hash):
                                 '<item name="android:windowBackground">#0B1524</item>', styles)
         return head + start_tag + section + "</style>" + tail
     rewrite(styles, patch_styles)
-    print("FluidGram v1.4 thermal-aware glass and refresh guard applied. Install package: " + PACKAGE + ".web")
+    print("FluidGram v1.5 shared power receiver and thermal build repair applied. Install package: " + PACKAGE + ".web")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

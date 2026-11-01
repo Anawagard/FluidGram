@@ -8,9 +8,7 @@ import android.graphics.drawable.GradientDrawable;
 import android.content.ClipboardManager;
 import android.content.ClipData;
 import android.content.Context;
-import android.content.BroadcastReceiver;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.view.Gravity;
 import android.view.View;
@@ -32,32 +30,8 @@ public final class FluidLabsActivity extends Activity {
     private boolean neon;
     private static final int VPN_IMPORT_REQUEST = 17011;
     private String vpnImportSummary = "Профиль ещё не проверен";
-    private boolean batteryReceiverRegistered;
-    // Cached only while visible; avoid repeated sticky battery queries on UI rerenders.
+    // Cached only while visible; shared with FluidRefresh's single power receiver.
     private int cachedBatteryPercent = -1;
-    // Event-driven glass policy: no polling or per-frame battery work.
-    private final BroadcastReceiver batteryReceiver = new BroadcastReceiver() {
-        @Override public void onReceive(Context context, Intent intent) {
-            if (glassBackdrop == null) return;
-            // Battery broadcasts already carry the level. Avoid a second
-            // sticky registerReceiver(null, ...) query for each event.
-            if (intent != null && Intent.ACTION_BATTERY_CHANGED.equals(intent.getAction())) {
-                int level = intent.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1);
-                int scale = intent.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1);
-                if (level >= 0 && scale > 0) {
-                    cachedBatteryPercent = level * 100 / scale;
-                    android.os.PowerManager pm = (android.os.PowerManager)
-                            getSystemService(Context.POWER_SERVICE);
-                    boolean enabled = level * 100 / scale > 20
-                            && (pm == null || !pm.isPowerSaveMode())
-                            && !FluidRefresh.isThermallyConstrained(this);
-                    FluidGlass.setAmbientBlur(glassBackdrop, enabled);
-                    return;
-                }
-            }
-            FluidGlass.setAmbientBlur(glassBackdrop, allowGlassBlur());
-        }
-    };
     private static final int BG = 0xFF050A11;
     private static final int ACCENT = 0xFFE2F9FF;
     private static final String[] MODE_NAMES = {
@@ -84,20 +58,9 @@ public final class FluidLabsActivity extends Activity {
     @Override protected void onResume() {
         super.onResume();
         FluidRefresh.resume(this);
-        if (!batteryReceiverRegistered) {
-            IntentFilter filter = new IntentFilter();
-            filter.addAction(Intent.ACTION_BATTERY_CHANGED);
-            filter.addAction(android.os.PowerManager.ACTION_POWER_SAVE_MODE_CHANGED);
-            registerReceiver(batteryReceiver, filter);
-            batteryReceiverRegistered = true;
-        }
-        if (glassBackdrop != null) FluidGlass.setAmbientBlur(glassBackdrop, allowGlassBlur());
+        updateGlassPowerPolicy(-1);
     }
     @Override protected void onPause() {
-        if (batteryReceiverRegistered) {
-            unregisterReceiver(batteryReceiver);
-            batteryReceiverRegistered = false;
-        }
         if (glassBackdrop != null) FluidGlass.setAmbientBlur(glassBackdrop, false);
         cachedBatteryPercent = -1;
         FluidRefresh.pause(this);
@@ -141,6 +104,12 @@ public final class FluidLabsActivity extends Activity {
         } catch (android.content.ActivityNotFoundException ignored) {
             Toast.makeText(this, "Системный выбор файлов недоступен", Toast.LENGTH_LONG).show();
         }
+    }
+
+    /** Reuse FluidRefresh's foreground power receiver instead of registering a second one. */
+    void updateGlassPowerPolicy(int batteryPercent) {
+        if (batteryPercent >= 0 && batteryPercent <= 100) cachedBatteryPercent = batteryPercent;
+        if (glassBackdrop != null) FluidGlass.setAmbientBlur(glassBackdrop, allowGlassBlur());
     }
 
     // Called only when Android reports a thermal threshold transition.
@@ -193,7 +162,7 @@ public final class FluidLabsActivity extends Activity {
         hero.setPadding(dp(21), dp(22), dp(21), dp(23));
         hero.setBackground(FluidGlass.surface(this, true));
         hero.setElevation(dp(8));
-        TextView eyebrow = text("FLUIDGRAM  /  GLASS LABS  1.4", 12, 0xFFB6FFEE, true);
+        TextView eyebrow = text("FLUIDGRAM  /  GLASS LABS  1.5", 12, 0xFFB6FFEE, true);
         hero.addView(eyebrow, margins(9));
         TextView headline = text("Живое стекло.\nТвой Telegram.", 27, Color.WHITE, true);
         hero.addView(headline, margins(10));

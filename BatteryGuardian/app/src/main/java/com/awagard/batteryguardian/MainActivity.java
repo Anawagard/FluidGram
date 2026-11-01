@@ -155,7 +155,7 @@ public class MainActivity extends Activity {
     }
     @SuppressWarnings("deprecation")
     private String command(String... a)throws Exception{
-      String[] args=new String[a.length+1];args[0]="/system/bin/"+a[0];System.arraycopy(a,0,args,1,a.length);
+      String[] args=a.clone();args[0]="/system/bin/"+a[0];
       java.lang.reflect.Method method=Shizuku.class.getDeclaredMethod("newProcess",String[].class,String[].class,String.class);
       method.setAccessible(true);
       ShizukuRemoteProcess p=(ShizukuRemoteProcess)method.invoke(null,args,null,null);

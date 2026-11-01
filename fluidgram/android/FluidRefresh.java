@@ -188,6 +188,8 @@ public final class FluidRefresh {
             stopPowerListener();
             powerOwner = a;
             lastBatteryGuardState = batteryPercent(a) > 20 ? 1 : 0;
+            highRefreshAllowed = lastBatteryGuardState == 1;
+            lastPowerCheckMs = 0L; // Never reuse a stale guard after returning to foreground.
             powerReceiver = new BroadcastReceiver() {
                 @Override public void onReceive(Context context, Intent intent) {
                     if (powerOwner != a || intent == null) return;
@@ -263,7 +265,11 @@ public final class FluidRefresh {
     public static void refresh(Activity a) {
         stopAdaptive();
         apply(a);
-        if (prefs(a).getInt("refresh_mode", 4) == 4) startAdaptive(a);
+        // No scroll observer at all when power saver, low charge or thermal guard
+        // already prohibit high refresh. System broadcasts restore it when safe.
+        if (prefs(a).getInt("refresh_mode", 4) == 4 && allowHighRefresh(a)) {
+            startAdaptive(a);
+        }
         boolean keep = prefs(a).getBoolean("keep_screen_on", false);
         if (keep) a.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         else a.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);

@@ -41,7 +41,8 @@ public final class FluidLabsActivity extends Activity {
     private static final String[] MODE_NAMES = {
         "ColorOS · Автоматически", "Adaptive+ · Высокая плавность",
         "Максимум · совместимый режим", "Умный · экономия при 20%",
-        "Adaptive · прокрутка / покой"
+        "Adaptive · прокрутка / покой",
+        "165 Гц · касание / прокрутка / покой"
     };
     private int dp(float n) { return (int) (n * getResources().getDisplayMetrics().density + .5f); }
     private GradientDrawable background(int first, int second, int radius, boolean border) {
@@ -168,6 +169,11 @@ public final class FluidLabsActivity extends Activity {
         })) render();
     }
 
+    @Override public void onUserInteraction() {
+        super.onUserInteraction();
+        FluidRefresh.onInteraction(this);
+    }
+
     @Override protected void onDestroy() {
         pendingVpnConfig = null;
         super.onDestroy();
@@ -239,7 +245,7 @@ public final class FluidLabsActivity extends Activity {
 
         section("ЭКРАН  /  ADAPTIVE REFRESH");
         int mode = preferences.getInt("refresh_mode", 4);
-        card("Частота обновления", MODE_NAMES[Math.max(0, Math.min(mode, 4))],
+        card("Частота обновления", MODE_NAMES[Math.max(0, Math.min(mode, MODE_NAMES.length - 1))],
             "При прокрутке запрашивает совместимый максимум, в покое — системный режим. При 20% заряда и энергосбережении повышенный запрос отключается.", () -> {
                 new AlertDialog.Builder(this).setTitle("Частота обновления")
                     .setSingleChoiceItems(MODE_NAMES, mode, (dlg, which) -> {
@@ -249,6 +255,18 @@ public final class FluidLabsActivity extends Activity {
                         render();
                     }).setNegativeButton("Отмена", null).show();
             });
+        card("165 Гц · экспериментальный инструмент",
+             "Запрос при касании и прокрутке · сброс через 1,2 с",
+             "Включается последним вариантом в меню выше. ColorOS может ограничивать рендеринг 120 Гц; 1 Гц в покое обеспечивает сама LTPO-политика телефона.",
+             () -> new AlertDialog.Builder(this)
+                     .setTitle("165 Гц · эксперимент")
+                     .setMessage("Приложение может запросить режим дисплея 165 Гц, но не может гарантировать его при системном ограничении рендеринга. В покое запрос снимается; переход до 1 Гц решает ColorOS. Защита батареи и температуры сохраняется.")
+                     .setPositiveButton("Включить", (dialog, which) -> {
+                         preferences.edit().putInt("refresh_mode", 5).apply();
+                         FluidRefresh.refresh(this);
+                         render();
+                     })
+                     .setNegativeButton("Отмена", null).show());
         Display d = getWindowManager().getDefaultDisplay();
         card("Экран устройства",
              Math.round(d.getRefreshRate()) + " Гц сейчас  /  до " +

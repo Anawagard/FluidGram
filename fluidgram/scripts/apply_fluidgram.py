@@ -391,7 +391,7 @@ def apply(root, api_id, api_hash):
         super.onResume();
         FluidRefresh.resume(this);
         isResumed = true;""", launcher)
-        return replace_exact(src,
+        src = replace_exact(src,
             """    protected void onPause() {
         super.onPause();
         isResumed = false;""",
@@ -399,6 +399,19 @@ def apply(root, api_id, api_hash):
         FluidRefresh.pause(this);
         super.onPause();
         isResumed = false;""", launcher)
+        return replace_exact(src,
+            """    protected void onResume() {
+        super.onResume();
+        FluidRefresh.resume(this);""",
+            """    @Override
+    public void onUserInteraction() {
+        super.onUserInteraction();
+        FluidRefresh.onInteraction(this);
+    }
+
+    protected void onResume() {
+        super.onResume();
+        FluidRefresh.resume(this);""", launcher)
     rewrite(launcher, patch_launcher)
 
     # The custom Labs screen is not exported outside FluidGram.

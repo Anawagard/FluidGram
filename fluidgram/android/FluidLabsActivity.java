@@ -111,6 +111,9 @@ public final class FluidLabsActivity extends Activity {
                     : "только выборочные маршруты";
             vpnImportSummary = "Формат проверен: " + info.peers + " peer · " + coverage
                     + (info.hasDns ? " · DNS указан" : " · DNS не указан")
+                    + (info.dualStackConfigured ? " · адреса IPv4+IPv6 есть"
+                       : info.fullTunnel ? " · ВНИМАНИЕ: отсутствует адрес одного из IP-семейств"
+                       : " · выборочная маршрутизация")
                     + ". Это НЕ проверка подключения или защиты от утечек.";
             Toast.makeText(this, "Формат профиля проверен. VPN не подключён.", Toast.LENGTH_LONG).show();
         } catch (FluidVpnProfile.InvalidProfile invalid) {
@@ -178,7 +181,7 @@ public final class FluidLabsActivity extends Activity {
         hero.setPadding(dp(21), dp(22), dp(21), dp(23));
         hero.setBackground(FluidGlass.surface(this, true));
         hero.setElevation(dp(8));
-        TextView eyebrow = text("FLUIDGRAM  /  GLASS LABS  1.2", 12, 0xFFB6FFEE, true);
+        TextView eyebrow = text("FLUIDGRAM  /  GLASS LABS  1.3", 12, 0xFFB6FFEE, true);
         hero.addView(eyebrow, margins(9));
         TextView headline = text("Живое стекло.\nТвой Telegram.", 27, Color.WHITE, true);
         hero.addView(headline, margins(10));
@@ -240,9 +243,9 @@ public final class FluidLabsActivity extends Activity {
                 FluidEnergy.reset(this);
                 Toast.makeText(this, "Новая точка отсчёта сохранена", Toast.LENGTH_SHORT).show();
             });
-        section("VPN · подготовка");
+        section("VPN · аудит профиля");
         card("Импорт WireGuard .conf", vpnImportSummary,
-            "Строгая проверка IPv4/IPv6, ключей и адресов без подключения. Секретные ключи не сохраняются. "
+            "Проверка маршрутов, DNS, IPv4/IPv6 адресов и ключей без подключения. Секретные ключи не сохраняются. "
             + "Файл ограничен 64 КиБ; серверы не предоставляются.",
             this::openVpnFile);
         card("Встроенное подключение", "Пока недоступно · туннель не создан",

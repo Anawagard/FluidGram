@@ -11,7 +11,7 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 public final class FluidVpnProfileSmoke {
     private static String profile() {
-        return "[Interface]\nPrivateKey = " + "A".repeat(43) + "=\nAddress = 10.1.2.3/32\nDNS = 1.1.1.1\n" +
+        return "[Interface]\nPrivateKey = " + "A".repeat(43) + "=\nAddress = 10.1.2.3/32, fd00::2/128\nDNS = 1.1.1.1\n" +
                "[Peer]\nPublicKey = " + "B".repeat(42) + "A=\nEndpoint = example.com:51820\nAllowedIPs = 0.0.0.0/0, ::/0\n";
     }
     public static void main(String[] args) throws Exception {
@@ -34,11 +34,20 @@ public final class FluidVpnProfileSmoke {
             case "unsafe": src += "PostUp = echo unsafe\n"; break;
             case "duplicate": src = src.replace("Address = ", "PrivateKey = " + "A".repeat(43) + "=\nAddress = "); break;
             case "ipv6endpoint": src = src.replace("example.com:51820", "[2001:db8::1]:51820"); break;
+            case "noipv6addr": src = src.replace(", fd00::2/128", ""); break;
+            case "baddns": src = src.replace("DNS = 1.1.1.1", "DNS = https://evil.invalid/path"); break;
+            case "baddnscomma": src = src.replace("DNS = 1.1.1.1", "DNS = 1.1.1.1,"); break;
+            case "dnsdomain": src = src.replace("DNS = 1.1.1.1", "DNS = dns.example.com"); break;
+            case "dnsipv6": src = src.replace("DNS = 1.1.1.1", "DNS = 2606:4700:4700::1111"); break;
+            case "badendpointhost": src = src.replace("example.com:51820", "-bad..host:51820"); break;
+            case "duplicateDefault": src = src.replace("0.0.0.0/0, ::/0", "0.0.0.0/0, ::/0, 0.0.0.0/0"); break;
+            case "badipv6address": src = src.replace("fd00::2/128", "fd00:::2/128"); break;
             case "multi": src += "[Peer]\nPublicKey = " + "C".repeat(42) + "A=\nEndpoint = peer.example:1234\nAllowedIPs = 10.0.0.0/8\n"; break;
         }
         boolean valid = mode.equals("valid") || mode.equals("split") ||
                 mode.equals("ipv4only") || mode.equals("ipv6only") ||
-                mode.equals("ipv6endpoint") || mode.equals("multi");
+                mode.equals("ipv6endpoint") || mode.equals("multi") ||
+                mode.equals("noipv6addr") || mode.equals("dnsdomain") || mode.equals("dnsipv6");
         try {
             FluidVpnProfile.Info info = FluidVpnProfile.inspect(new ByteArrayInputStream(src.getBytes(StandardCharsets.UTF_8)));
             if (!valid) throw new AssertionError("Unsafe profile accepted: " + mode);
@@ -50,6 +59,10 @@ public final class FluidVpnProfileSmoke {
                 throw new AssertionError("IPv4 default misclassified");
             if (info.ipv6Default != !(mode.equals("split") || mode.equals("ipv4only")))
                 throw new AssertionError("IPv6 default misclassified");
+            if (!info.ipv4Address || info.ipv6Address == mode.equals("noipv6addr"))
+                throw new AssertionError("Interface address families misclassified");
+            if (info.dualStackConfigured != (info.fullTunnel && !mode.equals("noipv6addr")))
+                throw new AssertionError("Dual-stack configuration misclassified");
             System.out.println("OK");
         } catch (FluidVpnProfile.InvalidProfile e) {
             if (valid) throw e;
@@ -99,6 +112,14 @@ class WireGuardPreflight(unittest.TestCase):
     def test_reject_duplicate_private_key(self): self.check("duplicate", "REJECTED")
     def test_accept_numeric_ipv6_endpoint(self): self.check("ipv6endpoint", "OK")
     def test_accept_multiple_peers(self): self.check("multi", "OK")
+    def test_warn_missing_ipv6_interface_address(self): self.check("noipv6addr", "OK")
+    def test_reject_url_in_dns(self): self.check("baddns", "REJECTED")
+    def test_reject_empty_dns_entry(self): self.check("baddnscomma", "REJECTED")
+    def test_accept_dns_hostname(self): self.check("dnsdomain", "OK")
+    def test_accept_dns_ipv6(self): self.check("dnsipv6", "OK")
+    def test_reject_bad_endpoint_hostname(self): self.check("badendpointhost", "REJECTED")
+    def test_reject_duplicate_default_route(self): self.check("duplicateDefault", "REJECTED")
+    def test_reject_bad_ipv6_interface_address(self): self.check("badipv6address", "REJECTED")
 
     def test_no_persistence_or_background_work(self):
         source = (ROOT / "android" / "FluidVpnProfile.java").read_text()
@@ -111,6 +132,7 @@ class WireGuardPreflight(unittest.TestCase):
         labs = (ROOT / "android" / "FluidLabsActivity.java").read_text()
         self.assertIn("Intent.ACTION_OPEN_DOCUMENT", labs)
         self.assertIn("FluidVpnProfile.inspect(input)", labs)
-        self.assertIn("VPN · подготовка", labs)
+        self.assertIn("VPN · аудит профиля", labs)
+        self.assertIn("info.dualStackConfigured", labs)
 
 if __name__ == "__main__": unittest.main()

@@ -110,7 +110,7 @@ jobs:
         if: steps.gate.outputs.enabled == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: FluidGram-OnePlus15-v12-VPN-Route-Safety
+          name: FluidGram-OnePlus15-v13-VPN-Profile-Audit
           path: |
             Telegram/TMessagesProj_AppStandalone/build/outputs/apk/afat/standalone/*.apk
             FluidGram-APK-SHA256.txt

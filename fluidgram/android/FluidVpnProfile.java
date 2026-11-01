@@ -21,13 +21,20 @@ public final class FluidVpnProfile {
         public final boolean fullTunnel;
         public final boolean ipv4Default;
         public final boolean ipv6Default;
-        private Info(int peers, boolean hasDns, boolean ipv4Default, boolean ipv6Default) {
+        public final boolean ipv4Address;
+        public final boolean ipv6Address;
+        public final boolean dualStackConfigured;
+        private Info(int peers, boolean hasDns, boolean ipv4Default, boolean ipv6Default,
+                     boolean ipv4Address, boolean ipv6Address) {
             this.peers = peers;
             this.hasDns = hasDns;
             this.ipv4Default = ipv4Default;
             this.ipv6Default = ipv6Default;
-            // Both families must have default routes before claiming full coverage.
+            this.ipv4Address = ipv4Address;
+            this.ipv6Address = ipv6Address;
+            // Route declarations are NOT proof of connectivity or leak protection.
             this.fullTunnel = ipv4Default && ipv6Default;
+            this.dualStackConfigured = fullTunnel && ipv4Address && ipv6Address;
         }
     }
 
@@ -128,6 +135,27 @@ public final class FluidVpnProfile {
         return isIpv4(host) ? prefix <= 32 : isIpv6(host) && prefix <= 128;
     }
 
+    /** Strict ASCII hostname, not a URL, path, wildcard or malformed numeric IP. */
+    private static boolean isHostname(String value) {
+        if (value.isEmpty() || value.length() > 253 || value.matches("[0-9.]+")) return false;
+        for (String label : value.split("\\\\.", -1)) {
+            if (label.isEmpty() || label.length() > 63) return false;
+            if (!isAsciiAlnum(label.charAt(0)) || !isAsciiAlnum(label.charAt(label.length() - 1)))
+                return false;
+            for (int i = 1; i < label.length() - 1; i++)
+                if (!isAsciiAlnum(label.charAt(i)) && label.charAt(i) != '-') return false;
+        }
+        return true;
+    }
+
+    private static boolean isAsciiAlnum(char c) {
+        return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9');
+    }
+
+    private static boolean isDnsHost(String value) {
+        return isIpv4(value) || isIpv6(value) || isHostname(value);
+    }
+
     private static boolean isEndpoint(String value) {
         String host;
         String port;
@@ -143,7 +171,7 @@ public final class FluidVpnProfile {
             if (colon <= 0 || value.indexOf(':') != colon) return false;
             host = value.substring(0, colon);
             port = value.substring(colon + 1);
-            if (!host.matches("[A-Za-z0-9._-]+")) return false;
+            if (!isIpv4(host) && !isHostname(host)) return false;
         }
         if (port.isEmpty() || port.length() > 5) return false;
         int n = 0;
@@ -169,6 +197,7 @@ public final class FluidVpnProfile {
     private static Info parse(String source) throws InvalidProfile {
         String section = "";
         boolean privateKey = false, address = false, dns = false;
+        boolean ipv4Address = false, ipv6Address = false;
         boolean ipv4Default = false, ipv6Default = false;
         boolean peerKey = false, peerRoutes = false, peerEndpoint = false;
         boolean seenInterface = false, seenDns = false, seenPreshared = false;
@@ -209,12 +238,18 @@ public final class FluidVpnProfile {
                         break;
                     case "address":
                         if (address) throw new InvalidProfile("Повторный Address");
-                        for (String item : value.split(",", -1))
-                            if (!isCidr(item.trim())) throw new InvalidProfile("Некорректный Address");
+                        for (String item : value.split(",", -1)) {
+                            String cidr = item.trim();
+                            if (!isCidr(cidr)) throw new InvalidProfile("Некорректный Address");
+                            if (isIpv4(cidr.substring(0, cidr.indexOf('/')))) ipv4Address = true;
+                            else ipv6Address = true;
+                        }
                         address = true;
                         break;
                     case "dns":
                         if (seenDns) throw new InvalidProfile("Повторный DNS");
+                        for (String item : value.split(",", -1))
+                            if (!isDnsHost(item.trim())) throw new InvalidProfile("Некорректный DNS");
                         seenDns = dns = true;
                         break;
                     case "listenport":
@@ -245,8 +280,14 @@ public final class FluidVpnProfile {
                         for (String route : value.split(",", -1)) {
                             String cidr = route.trim();
                             if (!isCidr(cidr)) throw new InvalidProfile("Некорректный AllowedIPs");
-                            if ("0.0.0.0/0".equals(cidr)) ipv4Default = true;
-                            if ("::/0".equals(cidr)) ipv6Default = true;
+                            if ("0.0.0.0/0".equals(cidr)) {
+                                if (ipv4Default) throw new InvalidProfile("Повторный маршрут IPv4 /0");
+                                ipv4Default = true;
+                            }
+                            if ("::/0".equals(cidr)) {
+                                if (ipv6Default) throw new InvalidProfile("Повторный маршрут IPv6 /0");
+                                ipv6Default = true;
+                            }
                         }
                         peerRoutes = true;
                         break;
@@ -265,6 +306,6 @@ public final class FluidVpnProfile {
         }
         if (!privateKey || !address || peers == 0)
             throw new InvalidProfile("Нужны Interface (PrivateKey, Address) и хотя бы один Peer");
-        return new Info(peers, dns, ipv4Default, ipv6Default);
+        return new Info(peers, dns, ipv4Default, ipv6Default, ipv4Address, ipv6Address);
     }
 }

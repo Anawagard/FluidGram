@@ -1,4 +1,4 @@
-# FluidGram v1.1 — VPN preflight / Energy Lab / ColorOS 17 glass
+# FluidGram v1.3 — VPN DNS and dual-stack audit / Energy Lab / ColorOS 17 glass
 
 Unofficial Telegram Android build for OnePlus 15 / ColorOS 17. Overlay is applied to pinned upstream Telegram at `3de37c8cfb039452be7398909461da6288babf15`.
 
@@ -12,11 +12,13 @@ Unofficial Telegram Android build for OnePlus 15 / ColorOS 17. Overlay is applie
 - **Camera:** round-video 60/LIGHT toggle (subject to camera support), camera flip safeguards, optional haptics.
 - **Privacy:** diagnostic clipboard reports contain device display/power readings, not chats, API keys or VPN secrets.
 
-## VPN preflight (v1.1) — NOT a working tunnel
+## VPN profile safety audit (v1.3) — NOT a working tunnel
 
-- FluidGram Labs now offers a user-selected WireGuard `.conf` file picker and bounded, read-only validation (64 KiB maximum). The parser checks Interface/Peer essentials, reports only the peer count and broad route type, and does not persist credentials, endpoint addresses, URI permissions, or files. The raw input buffer is wiped after parsing; transient Java strings are garbage-collected. Syntax checks are not a cryptographic verification or a network connectivity test.
+- FluidGram Labs now offers a user-selected WireGuard `.conf` file picker and bounded, read-only validation (64 KiB maximum). The parser checks Interface/Peer essentials, validates DNS hostnames and numeric IPv4/IPv6 DNS entries, rejects duplicate default routes and malformed endpoint hostnames, and reports only the peer count, route coverage and interface address-family coverage, and does not persist credentials, endpoint addresses, URI permissions, or files. The raw input buffer is wiped after parsing; transient Java strings are garbage-collected. Syntax checks are not a cryptographic verification or a network connectivity test.
 - A separate card opens Android system VPN settings to manage an independently installed VPN. No VPN service is started by FluidGram and no traffic is routed through FluidGram. The UI explicitly marks built-in connection unavailable.
 - The import feature is foreground-only, with no polling, wake locks, background service, or network activity. This avoids introducing new idle battery drain.
+
+**Energy and privacy:** Profile inspection runs only after user file selection; no periodic network checks, no background VPN service, and no stored credentials. Route coverage and address-family flags are only static configuration hints, never proof of a leak-free connection.
 
 ## Planned, not yet implemented
 
@@ -24,6 +26,6 @@ A functional built-in VPN client remains under investigation. A real tunnel requ
 
 ## Build and verification
 
-GitHub Actions runs unit/regression checks and the pinned-upstream overlay check, then builds a signed APK when the required private build secrets are present. Artifact: `FluidGram-OnePlus15-v11-VPN-Preflight`, containing APK and `FluidGram-APK-SHA256.txt`. A passing source test is not proof of device-specific refresh rate or measured power reduction.
+GitHub Actions runs unit/regression checks and the pinned-upstream overlay check, then builds a signed APK when the required private build secrets are present. Artifact: `FluidGram-OnePlus15-v13-VPN-Profile-Audit`, containing APK and `FluidGram-APK-SHA256.txt`. A passing source test is not proof of device-specific refresh rate or measured power reduction.
 
-The package is `dev.fluidgram.oneplus15.web`; versionCode `7246`. GPL-2.0-or-later, based on official Telegram sources.
+The package is `dev.fluidgram.oneplus15.web`; versionCode `7248`. GPL-2.0-or-later, based on official Telegram sources.

@@ -8,6 +8,9 @@ import android.graphics.drawable.GradientDrawable;
 import android.content.ClipboardManager;
 import android.content.ClipData;
 import android.content.Context;
+import android.content.BroadcastReceiver;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.view.Gravity;
 import android.view.View;
@@ -27,6 +30,13 @@ public final class FluidLabsActivity extends Activity {
     private FluidGlass.Backdrop glassBackdrop;
     private SharedPreferences preferences;
     private boolean neon;
+    private boolean batteryReceiverRegistered;
+    // Event-driven glass policy: no polling or per-frame battery work.
+    private final BroadcastReceiver batteryReceiver = new BroadcastReceiver() {
+        @Override public void onReceive(Context context, Intent intent) {
+            if (glassBackdrop != null) FluidGlass.setAmbientBlur(glassBackdrop, allowGlassBlur());
+        }
+    };
     private static final int BG = 0xFF050A11;
     private static final int ACCENT = 0xFFE2F9FF;
     private static final String[] MODE_NAMES = {
@@ -53,9 +63,20 @@ public final class FluidLabsActivity extends Activity {
     @Override protected void onResume() {
         super.onResume();
         FluidRefresh.resume(this);
+        if (!batteryReceiverRegistered) {
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(Intent.ACTION_BATTERY_CHANGED);
+            filter.addAction(android.os.PowerManager.ACTION_POWER_SAVE_MODE_CHANGED);
+            registerReceiver(batteryReceiver, filter);
+            batteryReceiverRegistered = true;
+        }
         if (glassBackdrop != null) FluidGlass.setAmbientBlur(glassBackdrop, allowGlassBlur());
     }
     @Override protected void onPause() {
+        if (batteryReceiverRegistered) {
+            unregisterReceiver(batteryReceiver);
+            batteryReceiverRegistered = false;
+        }
         if (glassBackdrop != null) FluidGlass.setAmbientBlur(glassBackdrop, false);
         FluidRefresh.pause(this);
         super.onPause();
@@ -103,7 +124,7 @@ public final class FluidLabsActivity extends Activity {
         hero.setPadding(dp(21), dp(22), dp(21), dp(23));
         hero.setBackground(FluidGlass.surface(this, true));
         hero.setElevation(dp(8));
-        TextView eyebrow = text("FLUIDGRAM  /  GLASS LABS  0.8", 12, 0xFFB6FFEE, true);
+        TextView eyebrow = text("FLUIDGRAM  /  GLASS LABS  0.9", 12, 0xFFB6FFEE, true);
         hero.addView(eyebrow, margins(9));
         TextView headline = text("Живое стекло.\nТвой Telegram.", 27, Color.WHITE, true);
         hero.addView(headline, margins(10));
@@ -143,7 +164,7 @@ public final class FluidLabsActivity extends Activity {
         int charge = FluidRefresh.batteryPercent(this);
         card("Энергетический профиль", charge + "% · " +
                 (saver ? "энергосбережение Android" : "обычный режим"),
-            "При заряде ≤20% или системном энергосбережении Adaptive не запрашивает высокую частоту. Эффект экономии требует измерений.", null);
+            "Все режимы повышенной частоты отключают запрос при ≤20% или энергосбережении. При уходе из приложения запрос снимается. Экономия требует измерений.", null);
         section("ДИАГНОСТИКА  /  COLOROS");
         card("Скопировать режимы экрана", "Отладка 90 / 120 / 165 Гц",
             "Экспортирует только модель устройства, частоты дисплея и выбранный режим. Без переписок и ключей.",

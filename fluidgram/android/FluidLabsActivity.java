@@ -33,6 +33,7 @@ public final class FluidLabsActivity extends Activity {
     // Imported profile exists in RAM only; never saved in preferences or a Bundle.
     private com.wireguard.config.Config pendingVpnConfig;
     private String vpnImportSummary = "Профиль ещё не проверен";
+    private String vlessSummary = "VLESS пока не подключается: движок не установлен";
     // Cached only while visible; shared with FluidRefresh's single power receiver.
     private int cachedBatteryPercent = -1;
     private static final int BG = 0xFF050A11;
@@ -292,6 +293,29 @@ public final class FluidLabsActivity extends Activity {
             () -> {
                 FluidEnergy.reset(this);
                 Toast.makeText(this, "Новая точка отсчёта сохранена", Toast.LENGTH_SHORT).show();
+            });
+        section("VLESS · ПОДГОТОВКА");
+        card("Проверить VLESS-ссылку", vlessSummary,
+            "Проверка формата vless://, UUID, TLS/REALITY и транспорта. " +
+            "Подключение и импорт ключей пока НЕ реализованы; ссылка не сохраняется.",
+            () -> {
+                final android.widget.EditText field = new android.widget.EditText(this);
+                field.setSingleLine(true);
+                field.setHint("vless://UUID@server:443?security=reality...");
+                new AlertDialog.Builder(this).setTitle("Проверка VLESS")
+                    .setView(field)
+                    .setPositiveButton("Проверить", (dialog, which) -> {
+                        try {
+                            FluidVlessProfile.Info info = FluidVlessProfile.inspect(field.getText().toString().trim());
+                            vlessSummary = "Формат: " + info.transport + " / " + info.security +
+                                    ". Подключение недоступно до интеграции движка.";
+                        } catch (IllegalArgumentException error) {
+                            vlessSummary = error.getMessage();
+                        } finally {
+                            field.getText().clear();
+                        }
+                        render();
+                    }).setNegativeButton("Отмена", null).show();
             });
         section("VPN · WIREGUARD");
         card("Состояние VPN", FluidVpnTunnel.statusLabel(),

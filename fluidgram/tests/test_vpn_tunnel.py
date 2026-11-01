@@ -191,7 +191,8 @@ class WireGuardControllerRegression(unittest.TestCase):
 
     def test_power_guard_does_not_install_idle_scroll_listener(self):
         refresh = (ROOT / "android" / "FluidRefresh.java").read_text()
-        self.assertIn('getInt("refresh_mode", 4) == 4 && allowHighRefresh(a)', refresh)
+        self.assertIn('getInt("refresh_mode", 4) == 4', refresh)
+        self.assertIn('getInt("refresh_mode", 4) == 5) && allowHighRefresh(a)', refresh)
         self.assertIn("lastPowerCheckMs = 0L; // Never reuse a stale guard", refresh)
         self.assertIn("if (powerOwner == a) stopPowerListener();", refresh)
 

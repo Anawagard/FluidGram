@@ -82,9 +82,11 @@ def verify():
         assert "CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES" in fps
         assert "0xffDDF7F4" in palette
         assert f"APP_PACKAGE={PACKAGE}" in props
-        assert "APP_VERSION_CODE=7246" in props
+        assert "APP_VERSION_CODE=7247" in props
         vpn = (root / "TMessagesProj/src/main/java/org/telegram/ui/FluidVpnProfile.java").read_text(encoding="utf8")
         assert "MAX_CONFIG_BYTES = 64 * 1024" in vpn
+        assert "ipv4Default && ipv6Default" in vpn
+        assert "Это НЕ проверка подключения" in labs
         assert "FluidVpnProfile.inspect(input)" in labs
         assert "FluidGram (unofficial)" in (root / "TMessagesProj/src/main/res/values/strings.xml").read_text(encoding="utf8")
         print("OK: applied to pinned source; no APK compiled, no private credentials")

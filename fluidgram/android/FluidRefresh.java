@@ -35,6 +35,7 @@ public final class FluidRefresh {
     private static View adaptiveDecor;
     private static ViewTreeObserver.OnScrollChangedListener scrollListener;
     private static Runnable idleReset;
+    private static long lastScrollHintMs;
     private FluidRefresh() {}
     public static SharedPreferences prefs(Context c) {
         return c.getSharedPreferences(PREF, Context.MODE_PRIVATE);
@@ -67,7 +68,8 @@ public final class FluidRefresh {
         SharedPreferences p = prefs(a);
         int setting = p.getInt("refresh_mode", 4);
         float highest = maxSupportedHz(a);
-        if (setting == 3 && !allowHighRefresh(a)) setting = 0;
+        // All high-refresh modes yield to the battery guard, not only mode 3.
+        if (setting != 0 && !allowHighRefresh(a)) setting = 0;
         WindowManager.LayoutParams lp = window.getAttributes();
         lp.preferredDisplayModeId = 0;
         lp.preferredRefreshRate = 0f; // Return full authority to ColorOS for system auto mode.
@@ -95,12 +97,13 @@ public final class FluidRefresh {
     private static boolean allowHighRefresh(Activity a) {
         long now = SystemClock.elapsedRealtime();
         if (lastPowerCheckMs == 0L || now - lastPowerCheckMs >= 15000L) {
-            PowerManager pm = (PowerManager) a.getSystemService(Context.POWER_SERVICE);
-            highRefreshAllowed = batteryPercent(a) > 20
-                    && (pm == null || !pm.isPowerSaveMode());
+            highRefreshAllowed = batteryPercent(a) > 20;
             lastPowerCheckMs = now;
         }
-        return highRefreshAllowed;
+        // Power saver is cheap to query and must take effect immediately,
+        // even if the sticky battery reading is cached for 15 seconds.
+        PowerManager pm = (PowerManager) a.getSystemService(Context.POWER_SERVICE);
+        return highRefreshAllowed && (pm == null || !pm.isPowerSaveMode());
     }
     private static void stopAdaptive() {
         if (idleReset != null) adaptiveHandler.removeCallbacks(idleReset);
@@ -112,6 +115,17 @@ public final class FluidRefresh {
         adaptiveDecor = null;
         scrollListener = null;
         idleReset = null;
+        lastScrollHintMs = 0L;
+    }
+    /** Release hints as soon as an Activity loses focus; ColorOS owns background refresh. */
+    private static void releaseRefreshHint(Activity a) {
+        if (a == null) return;
+        WindowManager.LayoutParams lp = a.getWindow().getAttributes();
+        if (lp.preferredRefreshRate != 0f || lp.preferredDisplayModeId != 0) {
+            lp.preferredRefreshRate = 0f;
+            lp.preferredDisplayModeId = 0;
+            a.getWindow().setAttributes(lp);
+        }
     }
     private static void startAdaptive(Activity a) {
         stopAdaptive();
@@ -130,6 +144,11 @@ public final class FluidRefresh {
         };
         scrollListener = () -> {
             if (adaptiveOwner != a || !decor.isAttachedToWindow()) return;
+            // Coalesce rapid scroll callbacks: at most ten hint/handler updates
+            // per second instead of one per frame at 120/165 Hz.
+            long now = SystemClock.elapsedRealtime();
+            if (now - lastScrollHintMs < 100L) return;
+            lastScrollHintMs = now;
             if (!allowHighRefresh(a)) {
                 adaptiveHandler.removeCallbacks(idleReset);
                 idleReset.run();
@@ -157,11 +176,17 @@ public final class FluidRefresh {
         stopHud();
         if (prefs(a).getBoolean("show_vsync", false)) startHud(a);
     }
-    public static void pause(Activity a) { if (owner == a) stopHud(); if (adaptiveOwner == a) stopAdaptive(); }
+    public static void pause(Activity a) {
+        if (owner == a) stopHud();
+        if (adaptiveOwner == a) stopAdaptive();
+        releaseRefreshHint(a);
+        // The user-requested stay-awake flag is foreground-only.
+        if (a != null) a.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    }
     public static String diagnostic(Activity a) {
         Display d = a.getWindowManager().getDefaultDisplay();
         StringBuilder b = new StringBuilder();
-        b.append("FluidGram v0.8; ColorOS controls final refresh rate\n");
+        b.append("FluidGram v0.9; ColorOS controls final refresh rate\n");
         b.append("Device: ").append(android.os.Build.MANUFACTURER).append(" ")
                 .append(android.os.Build.MODEL).append("\n");
         b.append("ColorOS/Android reported Hz: ").append(d.getRefreshRate()).append("\n");

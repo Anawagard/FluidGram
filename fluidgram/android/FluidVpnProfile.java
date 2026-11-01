@@ -99,6 +99,7 @@ public final class FluidVpnProfile {
     private static boolean isIpv6(String address) {
         if (address.indexOf(':') < 0 || address.contains(":::")) return false;
         int gap = address.indexOf("::");
+        if (gap < 0 && (address.startsWith(":") || address.endsWith(":"))) return false;
         if (gap >= 0 && gap != address.lastIndexOf("::")) return false;
         String[] groups = address.split(":", -1);
         int count = 0;

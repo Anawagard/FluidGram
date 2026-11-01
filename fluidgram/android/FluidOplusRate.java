@@ -15,6 +15,9 @@ public final class FluidOplusRate {
     private static final int RATE_165 = 7;
     private static final int RATE_NONE = 0;
     private static boolean requested;
+    private static int acceptedVotes;
+    private static int successfulReleases;
+    private static int failedReleases;
     private static String state = "Не проверено";
     private FluidOplusRate() {}
 
@@ -69,12 +72,35 @@ public final class FluidOplusRate {
     public static boolean request(String packageName) {
         if (requested) return true;
         requested = call(packageName, RATE_165);
+        if (requested) acceptedVotes++;
         return requested;
     }
     public static void release(String packageName) {
         if (requested) {
-            if (call(packageName, RATE_NONE)) requested = false;
+            if (call(packageName, RATE_NONE)) {
+                requested = false;
+                successfulReleases++;
+            } else {
+                failedReleases++;
+            }
         }
     }
-    public static String diagnostic() { return state + "; запрос активен: " + requested; }
+    /** One explicitly timed second withdrawal, only after the inactivity timer.
+     * Never issue a guessed vendor transaction or vote for 120Hz: that can pin
+     * 120Hz instead of restoring LTPO.
+     */
+    public static void confirmRelease(String packageName) {
+        if (call(packageName, RATE_NONE)) {
+            requested = false;
+            successfulReleases++;
+        } else {
+            failedReleases++;
+        }
+    }
+    public static String diagnostic() {
+        return state + "; запрос активен: " + requested
+                + "; принятых 165: " + acceptedVotes
+                + "; сбросов: " + successfulReleases
+                + "; ошибок сброса: " + failedReleases;
+    }
 }

@@ -48,3 +48,11 @@ def test_vendor_mode_does_not_pin_android_display_mode():
     assert 'releaseRefreshHint(a);' in branch
     assert 'FluidOplusRate.request(vendorPackage);' in branch
     assert 'return;' in branch.split('if (best != null)', 1)[0]
+
+def test_second_zero_vote_is_cancelled_on_new_interaction():
+    vendor = (BASE / "android/FluidOplusRate.java").read_text(encoding="utf-8")
+    assert 'void confirmRelease(String packageName)' in vendor
+    assert 'adaptiveHandler.removeCallbacks(idleConfirm);' in refresh
+    assert 'adaptiveHandler.postDelayed(idleConfirm, 350);' in refresh
+    assert 'FluidOplusRate.confirmRelease(vendorPackage)' in refresh
+    assert 'RATE_120' not in vendor

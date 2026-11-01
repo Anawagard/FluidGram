@@ -44,6 +44,7 @@ public final class FluidRefresh {
     private static View adaptiveDecor;
     private static ViewTreeObserver.OnScrollChangedListener scrollListener;
     private static Runnable idleReset;
+    private static Runnable idleConfirm;
     private static long lastScrollHintMs;
     private static long lastInteractionHintMs;
     private static String vendorPackage;
@@ -125,6 +126,7 @@ public final class FluidRefresh {
                 && !isThermallyConstrained(a);
     }
     private static void stopAdaptive() {
+        if (idleConfirm != null) adaptiveHandler.removeCallbacks(idleConfirm);
         if (vendorPackage != null) {
             FluidOplusRate.release(vendorPackage);
             vendorPackage = null;
@@ -138,6 +140,7 @@ public final class FluidRefresh {
         adaptiveDecor = null;
         scrollListener = null;
         idleReset = null;
+        idleConfirm = null;
         lastScrollHintMs = 0L;
         lastInteractionHintMs = 0L;
     }
@@ -179,6 +182,7 @@ public final class FluidRefresh {
             if (best == null || mode.getRefreshRate() > best.getRefreshRate()) best = mode;
         }
         if (prefs(a).getInt("refresh_mode", 4) == 5) {
+            if (idleConfirm != null) adaptiveHandler.removeCallbacks(idleConfirm);
             // Never combine a vendor 165 vote with a WindowManager mode pin:
             // releasing just one of the two can leave ColorOS fixed at 120Hz.
             vendorPackage = a.getPackageName();
@@ -205,9 +209,19 @@ public final class FluidRefresh {
         adaptiveDecor = a.getWindow().getDecorView();
         final View decor = adaptiveDecor;
         final float max = maxSupportedHz(a);
+        idleConfirm = () -> {
+            if (adaptiveOwner != a || vendorPackage == null
+                    || prefs(a).getInt("refresh_mode", 4) != 5) return;
+            // Repeat the zero vote only if no new touch/scroll arrived.
+            FluidOplusRate.confirmRelease(vendorPackage);
+        };
         idleReset = () -> {
             if (adaptiveOwner != a) return;
-            if (vendorPackage != null) FluidOplusRate.release(vendorPackage);
+            if (vendorPackage != null) {
+                FluidOplusRate.release(vendorPackage);
+                adaptiveHandler.removeCallbacks(idleConfirm);
+                adaptiveHandler.postDelayed(idleConfirm, 350);
+            }
             WindowManager.LayoutParams lp = a.getWindow().getAttributes();
             if (lp.preferredRefreshRate != 0f || lp.preferredDisplayModeId != 0) {
                 lp.preferredRefreshRate = 0f;

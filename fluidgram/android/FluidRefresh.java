@@ -1,6 +1,7 @@
 package org.telegram.ui;
 import android.app.Activity;
 import android.content.Context;
+import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
@@ -27,6 +28,8 @@ public final class FluidRefresh {
     private static Activity owner;
     private static TextView hud;
     private static DisplayManager displayManager;
+    private static Activity powerOwner;
+    private static BroadcastReceiver powerReceiver;
     private static DisplayManager.DisplayListener displayListener;
     private static long lastPowerCheckMs;
     private static boolean highRefreshAllowed;
@@ -165,7 +168,30 @@ public final class FluidRefresh {
         };
         decor.getViewTreeObserver().addOnScrollChangedListener(scrollListener);
     }
-    public static void resume(Activity a) { refresh(a); }
+    public static void resume(Activity a) {
+        if (powerOwner != a) {
+            stopPowerListener();
+            powerOwner = a;
+            powerReceiver = new BroadcastReceiver() {
+                @Override public void onReceive(Context context, Intent intent) {
+                    if (powerOwner != a) return;
+                    // Reevaluate the active window immediately when saver changes.
+                    lastPowerCheckMs = 0L;
+                    refresh(a);
+                }
+            };
+            a.registerReceiver(powerReceiver,
+                    new IntentFilter(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED));
+        }
+        refresh(a);
+    }
+    private static void stopPowerListener() {
+        if (powerOwner != null && powerReceiver != null) {
+            powerOwner.unregisterReceiver(powerReceiver);
+        }
+        powerOwner = null;
+        powerReceiver = null;
+    }
     public static void refresh(Activity a) {
         stopAdaptive();
         apply(a);
@@ -179,6 +205,7 @@ public final class FluidRefresh {
     public static void pause(Activity a) {
         if (owner == a) stopHud();
         if (adaptiveOwner == a) stopAdaptive();
+        if (powerOwner == a) stopPowerListener();
         releaseRefreshHint(a);
         // The user-requested stay-awake flag is foreground-only.
         if (a != null) a.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);

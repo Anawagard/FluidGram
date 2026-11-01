@@ -131,8 +131,8 @@ class WireGuardPreflight(unittest.TestCase):
         self.assertIn("ipv4Default && ipv6Default", source)
         labs = (ROOT / "android" / "FluidLabsActivity.java").read_text()
         self.assertIn("Intent.ACTION_OPEN_DOCUMENT", labs)
-        self.assertIn("FluidVpnProfile.inspect(input)", labs)
-        self.assertIn("VPN · аудит профиля", labs)
+        self.assertIn("FluidVpnTunnel.importProfile(input, getPackageName())", labs)
+        self.assertIn("VPN · WIREGUARD", labs)
         self.assertIn("info.dualStackConfigured", labs)
 
 if __name__ == "__main__": unittest.main()

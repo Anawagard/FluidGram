@@ -125,10 +125,13 @@ public class MainActivity extends Activity {
                               current.contains("allow")?"allow":"default";
               if(!getPreferences(0).contains(key))getPreferences(0).edit().putString(key,previous).commit();
               command("cmd","appops","set",pkg,"RUN_ANY_IN_BACKGROUND","ignore");
+              if(!command("cmd","appops","get",pkg,"RUN_ANY_IN_BACKGROUND").contains("ignore"))throw new IOException("ограничение не подтверждено");
            }else{
               if(!getPreferences(0).contains(key))throw new IOException("нет сохранённой настройки");
               String original=getPreferences(0).getString(key,"default");
               command("cmd","appops","set",pkg,"RUN_ANY_IN_BACKGROUND",original);
+              String verified=command("cmd","appops","get",pkg,"RUN_ANY_IN_BACKGROUND");
+              if(!verified.contains(original) && !(original.equals("default") && verified.contains("default")))throw new IOException("восстановление не подтверждено: "+verified);
               getPreferences(0).edit().remove(key).commit();
            }
            done++;
@@ -152,7 +155,7 @@ public class MainActivity extends Activity {
     }
     @SuppressWarnings("deprecation")
     private String command(String... a)throws Exception{
-      String[] args=new String[a.length+1];args[0]="/system/bin/"+a[0];System.arraycopy(a,1,args,1,a.length);
+      String[] args=new String[a.length+1];args[0]="/system/bin/"+a[0];System.arraycopy(a,0,args,1,a.length);
       java.lang.reflect.Method method=Shizuku.class.getDeclaredMethod("newProcess",String[].class,String[].class,String.class);
       method.setAccessible(true);
       ShizukuRemoteProcess p=(ShizukuRemoteProcess)method.invoke(null,args,null,null);

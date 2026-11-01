@@ -20,7 +20,7 @@ class GlassLabsRegression(unittest.TestCase):
     def test_overlay_includes_glass(self):
         source = (ROOT / "scripts" / "apply_fluidgram.py").read_text()
         self.assertIn('"FluidGlass.java"', source)
-        self.assertIn("APP_VERSION_CODE=7245", source)
+        self.assertIn("APP_VERSION_CODE=7246", source)
 
     def test_refresh_hud_is_event_driven_and_releases_listener(self):
         source = (ROOT / "android" / "FluidRefresh.java").read_text()
@@ -95,7 +95,7 @@ class GlassLabsRegression(unittest.TestCase):
         self.assertIn("FluidEnergy.report(this)", labs)
         self.assertIn("FluidEnergy.reset(this)", labs)
         self.assertIn('"FluidEnergy.java"', patch)
-        self.assertIn("GLASS LABS  1.0", labs)
+        self.assertIn("GLASS LABS  1.1", labs)
 
     def test_battery_threshold_is_event_driven_and_coalesced(self):
         source = (ROOT / "android" / "FluidRefresh.java").read_text()

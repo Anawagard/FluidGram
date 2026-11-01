@@ -30,6 +30,8 @@ public final class FluidLabsActivity extends Activity {
     private FluidGlass.Backdrop glassBackdrop;
     private SharedPreferences preferences;
     private boolean neon;
+    private static final int VPN_IMPORT_REQUEST = 17011;
+    private String vpnImportSummary = "Профиль ещё не проверен";
     private boolean batteryReceiverRegistered;
     // Event-driven glass policy: no polling or per-frame battery work.
     private final BroadcastReceiver batteryReceiver = new BroadcastReceiver() {
@@ -81,6 +83,39 @@ public final class FluidLabsActivity extends Activity {
         FluidRefresh.pause(this);
         super.onPause();
     }
+    @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != VPN_IMPORT_REQUEST || resultCode != RESULT_OK
+                || data == null || data.getData() == null) return;
+        // User-selected URI is read once. No persistable permission or secret storage.
+        try (java.io.InputStream input = getContentResolver().openInputStream(data.getData())) {
+            FluidVpnProfile.Info info = FluidVpnProfile.inspect(input);
+            vpnImportSummary = "Проверено: " + info.peers + " peer · "
+                    + (info.fullTunnel ? "общий маршрут" : "выборочные маршруты")
+                    + (info.hasDns ? " · DNS задан" : "");
+            Toast.makeText(this, "Формат профиля проверен. VPN не подключён.", Toast.LENGTH_LONG).show();
+        } catch (FluidVpnProfile.InvalidProfile invalid) {
+            // These messages are fixed parser strings and never contain private keys.
+            vpnImportSummary = "Проверка не пройдена: " + invalid.getMessage();
+        } catch (Exception ignored) {
+            // Never log file contents, paths, provider errors or credentials.
+            vpnImportSummary = "Не удалось прочитать конфигурацию";
+        }
+        render();
+    }
+
+    private void openVpnFile() {
+        Intent pick = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        pick.addCategory(Intent.CATEGORY_OPENABLE);
+        pick.setType("*/*");
+        pick.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        try {
+            startActivityForResult(pick, VPN_IMPORT_REQUEST);
+        } catch (android.content.ActivityNotFoundException ignored) {
+            Toast.makeText(this, "Системный выбор файлов недоступен", Toast.LENGTH_LONG).show();
+        }
+    }
+
     private boolean allowGlassBlur() {
         android.os.PowerManager power = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
         return FluidRefresh.batteryPercent(this) > 20
@@ -124,7 +159,7 @@ public final class FluidLabsActivity extends Activity {
         hero.setPadding(dp(21), dp(22), dp(21), dp(23));
         hero.setBackground(FluidGlass.surface(this, true));
         hero.setElevation(dp(8));
-        TextView eyebrow = text("FLUIDGRAM  /  GLASS LABS  1.0", 12, 0xFFB6FFEE, true);
+        TextView eyebrow = text("FLUIDGRAM  /  GLASS LABS  1.1", 12, 0xFFB6FFEE, true);
         hero.addView(eyebrow, margins(9));
         TextView headline = text("Живое стекло.\nТвой Telegram.", 27, Color.WHITE, true);
         hero.addView(headline, margins(10));
@@ -185,6 +220,23 @@ public final class FluidLabsActivity extends Activity {
             () -> {
                 FluidEnergy.reset(this);
                 Toast.makeText(this, "Новая точка отсчёта сохранена", Toast.LENGTH_SHORT).show();
+            });
+        section("VPN · подготовка");
+        card("Импорт WireGuard .conf", vpnImportSummary,
+            "Проверка формата и маршрутов без подключения. Секретные ключи не сохраняются. "
+            + "Файл ограничен 64 КиБ; серверы не предоставляются.",
+            this::openVpnFile);
+        card("Встроенное подключение", "Пока недоступно · туннель не создан",
+            "Для реального подключения нужен проверенный VPN-движок, системное согласие Android "
+            + "и ваш сервер или профиль. Импорт сам по себе не защищает трафик.", null);
+        card("VPN-настройки Android", "Открыть системные настройки",
+            "Для управления уже установленными VPN-приложениями на телефоне.",
+            () -> {
+                try {
+                    startActivity(new Intent(android.provider.Settings.ACTION_VPN_SETTINGS));
+                } catch (android.content.ActivityNotFoundException ignored) {
+                    Toast.makeText(this, "Настройки VPN недоступны", Toast.LENGTH_LONG).show();
+                }
             });
         section("ДИАГНОСТИКА  /  COLOROS");
         card("Скопировать режимы экрана", "Отладка 90 / 120 / 165 Гц",

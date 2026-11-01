@@ -33,6 +33,7 @@ public final class FluidRefresh {
     private static DisplayManager.DisplayListener displayListener;
     private static long lastPowerCheckMs;
     private static boolean highRefreshAllowed;
+    private static int lastBatteryGuardState = -1;
     private static final Handler adaptiveHandler = new Handler(Looper.getMainLooper());
     private static Activity adaptiveOwner;
     private static View adaptiveDecor;
@@ -173,16 +174,32 @@ public final class FluidRefresh {
         if (powerOwner != a) {
             stopPowerListener();
             powerOwner = a;
+            lastBatteryGuardState = batteryPercent(a) > 20 ? 1 : 0;
             powerReceiver = new BroadcastReceiver() {
                 @Override public void onReceive(Context context, Intent intent) {
-                    if (powerOwner != a) return;
-                    // Reevaluate the active window immediately when saver changes.
-                    lastPowerCheckMs = 0L;
+                    if (powerOwner != a || intent == null) return;
+                    String action = intent.getAction();
+                    if (Intent.ACTION_BATTERY_CHANGED.equals(action)) {
+                        int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+                        int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+                        if (level < 0 || scale <= 0) return;
+                        int state = (level * 100 / scale > 20) ? 1 : 0;
+                        highRefreshAllowed = state == 1;
+                        lastPowerCheckMs = SystemClock.elapsedRealtime();
+                        // Avoid reconfiguring the window on every battery broadcast.
+                        if (state == lastBatteryGuardState) return;
+                        lastBatteryGuardState = state;
+                    } else if (PowerManager.ACTION_POWER_SAVE_MODE_CHANGED.equals(action)) {
+                        lastPowerCheckMs = 0L;
+                    } else {
+                        return;
+                    }
                     refresh(a);
                 }
             };
-            a.registerReceiver(powerReceiver,
-                    new IntentFilter(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED));
+            IntentFilter filter = new IntentFilter(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED);
+            filter.addAction(Intent.ACTION_BATTERY_CHANGED);
+            a.registerReceiver(powerReceiver, filter);
         }
         refresh(a);
     }
@@ -192,6 +209,7 @@ public final class FluidRefresh {
         }
         powerOwner = null;
         powerReceiver = null;
+        lastBatteryGuardState = -1;
     }
     public static void refresh(Activity a) {
         stopAdaptive();

@@ -20,7 +20,7 @@ class GlassLabsRegression(unittest.TestCase):
     def test_overlay_includes_glass(self):
         source = (ROOT / "scripts" / "apply_fluidgram.py").read_text()
         self.assertIn('"FluidGlass.java"', source)
-        self.assertIn("APP_VERSION_CODE=7244", source)
+        self.assertIn("APP_VERSION_CODE=7245", source)
 
     def test_refresh_hud_is_event_driven_and_releases_listener(self):
         source = (ROOT / "android" / "FluidRefresh.java").read_text()
@@ -72,6 +72,30 @@ class GlassLabsRegression(unittest.TestCase):
         self.assertIn("ACTION_POWER_SAVE_MODE_CHANGED", source)
         self.assertIn("unregisterReceiver(batteryReceiver)", source)
         self.assertIn("FluidGlass.setAmbientBlur(glassBackdrop, allowGlassBlur())", source)
+
+    def test_energy_lab_is_on_demand_without_background_sampling(self):
+        source = (ROOT / "android" / "FluidEnergy.java").read_text()
+        self.assertIn("BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER", source)
+        self.assertIn("BatteryManager.BATTERY_PROPERTY_CURRENT_NOW", source)
+        self.assertIn("SystemClock.elapsedRealtime()", source)
+        self.assertIn("WeakHashMap<Activity, Boolean>", source)
+        self.assertIn("sensor unavailable", source)
+        self.assertIn("WHOLE PHONE", source)
+        self.assertNotIn("postDelayed", source)
+        self.assertNotIn("Choreographer", source)
+        self.assertNotIn("WakeLock", source)
+
+    def test_energy_lab_lifecycle_and_ui(self):
+        refresh = (ROOT / "android" / "FluidRefresh.java").read_text()
+        labs = (ROOT / "android" / "FluidLabsActivity.java").read_text()
+        patch = (ROOT / "scripts" / "apply_fluidgram.py").read_text()
+        self.assertIn("FluidEnergy.enter(a);", refresh)
+        self.assertIn("FluidEnergy.exit(a);", refresh)
+        self.assertIn("FluidEnergy.report(a)", refresh)
+        self.assertIn("FluidEnergy.report(this)", labs)
+        self.assertIn("FluidEnergy.reset(this)", labs)
+        self.assertIn('"FluidEnergy.java"', patch)
+        self.assertIn("GLASS LABS  1.0", labs)
 
 if __name__ == "__main__":
     unittest.main()

@@ -124,7 +124,7 @@ public final class FluidLabsActivity extends Activity {
         hero.setPadding(dp(21), dp(22), dp(21), dp(23));
         hero.setBackground(FluidGlass.surface(this, true));
         hero.setElevation(dp(8));
-        TextView eyebrow = text("FLUIDGRAM  /  GLASS LABS  0.9", 12, 0xFFB6FFEE, true);
+        TextView eyebrow = text("FLUIDGRAM  /  GLASS LABS  1.0", 12, 0xFFB6FFEE, true);
         hero.addView(eyebrow, margins(9));
         TextView headline = text("Живое стекло.\nТвой Telegram.", 27, Color.WHITE, true);
         hero.addView(headline, margins(10));
@@ -165,6 +165,21 @@ public final class FluidLabsActivity extends Activity {
         card("Энергетический профиль", charge + "% · " +
                 (saver ? "энергосбережение Android" : "обычный режим"),
             "Все режимы повышенной частоты отключают запрос при ≤20% или энергосбережении. При уходе из приложения запрос снимается. Экономия требует измерений.", null);
+        section("ENERGY LAB  /  БЕЗ ФОНОВОГО ОПРОСА");
+        card("Измерение заряда устройства", "Снимок по запросу",
+            "Сравнивай показания до и после использования. Датчик учитывает весь телефон, а не только FluidGram. Никаких таймеров и фонового мониторинга.",
+            () -> {
+                ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                if (cm != null) cm.setPrimaryClip(ClipData.newPlainText(
+                        "FluidGram energy report", FluidEnergy.report(this)));
+                Toast.makeText(this, "Энергетический отчёт скопирован", Toast.LENGTH_SHORT).show();
+            });
+        card("Новая точка отсчёта", "Сбросить измерение",
+            "Обнуляет накопленное время и изменение заряда. Не меняет системные настройки батареи.",
+            () -> {
+                FluidEnergy.reset(this);
+                Toast.makeText(this, "Новая точка отсчёта сохранена", Toast.LENGTH_SHORT).show();
+            });
         section("ДИАГНОСТИКА  /  COLOROS");
         card("Скопировать режимы экрана", "Отладка 90 / 120 / 165 Гц",
             "Экспортирует только модель устройства, частоты дисплея и выбранный режим. Без переписок и ключей.",

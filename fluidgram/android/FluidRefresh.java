@@ -169,6 +169,7 @@ public final class FluidRefresh {
         decor.getViewTreeObserver().addOnScrollChangedListener(scrollListener);
     }
     public static void resume(Activity a) {
+        FluidEnergy.enter(a);
         if (powerOwner != a) {
             stopPowerListener();
             powerOwner = a;
@@ -203,6 +204,7 @@ public final class FluidRefresh {
         if (prefs(a).getBoolean("show_vsync", false)) startHud(a);
     }
     public static void pause(Activity a) {
+        FluidEnergy.exit(a);
         if (owner == a) stopHud();
         if (adaptiveOwner == a) stopAdaptive();
         if (powerOwner == a) stopPowerListener();
@@ -213,7 +215,7 @@ public final class FluidRefresh {
     public static String diagnostic(Activity a) {
         Display d = a.getWindowManager().getDefaultDisplay();
         StringBuilder b = new StringBuilder();
-        b.append("FluidGram v0.9; ColorOS controls final refresh rate\n");
+        b.append("FluidGram v1.0; ColorOS controls final refresh rate\n");
         b.append("Device: ").append(android.os.Build.MANUFACTURER).append(" ")
                 .append(android.os.Build.MODEL).append("\n");
         b.append("ColorOS/Android reported Hz: ").append(d.getRefreshRate()).append("\n");
@@ -226,6 +228,7 @@ public final class FluidRefresh {
         b.append("Requested Hz: ").append(attrs.preferredRefreshRate).append("\n");
         b.append("Requested mode ID: ").append(attrs.preferredDisplayModeId).append("\n");
         b.append("HUD: event-driven display mode listener, not measured app FPS\n");
+        b.append(FluidEnergy.report(a)).append("\n");
         if (android.os.Build.VERSION.SDK_INT >= 23) {
             for (Display.Mode m : d.getSupportedModes()) {
                 b.append("Mode #").append(m.getModeId()).append(": ")

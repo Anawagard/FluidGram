@@ -23,6 +23,22 @@ class GlassLabsRegression(unittest.TestCase):
         self.assertNotIn("new Path", panel_draw)
         self.assertNotIn("new RectF", panel_draw)
 
+    def test_opaque_glass_is_opt_in_and_skips_backdrop(self):
+        glass = (ROOT / "android" / "FluidGlass.java").read_text()
+        labs = (ROOT / "android" / "FluidLabsActivity.java").read_text()
+        self.assertIn('getBoolean("reduce_glass_transparency", false)', glass)
+        self.assertIn('getBoolean("reduce_glass_transparency", false)', labs)
+        opaque = glass.split("if (opaque) {", 1)[1].split("Drawable panel = new Panel", 1)[0]
+        self.assertIn("GradientDrawable solid = new GradientDrawable()", opaque)
+        self.assertIn("solid.setColor(", opaque)
+        self.assertIn("return new RippleDrawable(", opaque)
+        self.assertNotIn("new Panel(", opaque)
+        self.assertIn('if (!preferences.getBoolean("reduce_glass_transparency", false)) {', labs)
+        self.assertIn('glassBackdrop = null;', labs)
+        self.assertIn('!preferences.getBoolean("reduce_glass_transparency", false)', labs)
+        self.assertIn('"reduce_glass_transparency".equals(key)) render()', labs)
+        self.assertIn('toggle("Непрозрачные карточки"', labs)
+
     def test_glass_is_used_in_settings_and_paused(self):
         source = (ROOT / "android" / "FluidLabsActivity.java").read_text()
         self.assertGreaterEqual(source.count("FluidGlass.surface("), 3)

@@ -196,7 +196,8 @@ public final class FluidLabsActivity extends Activity {
 
     private boolean allowGlassBlur() {
         android.os.PowerManager power = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
-        return (cachedBatteryPercent >= 0 ? cachedBatteryPercent
+        return !preferences.getBoolean("reduce_glass_transparency", false)
+                && (cachedBatteryPercent >= 0 ? cachedBatteryPercent
                 : FluidRefresh.batteryPercent(this)) > 20
                 && (power == null || !power.isPowerSaveMode())
                 && !FluidRefresh.isThermallyConstrained(this);
@@ -227,9 +228,12 @@ public final class FluidLabsActivity extends Activity {
         scroll.addView(root);
         FrameLayout scene = new FrameLayout(this);
         scene.setBackgroundColor(BG);
-        glassBackdrop = new FluidGlass.Backdrop(this);
-        scene.addView(glassBackdrop, new FrameLayout.LayoutParams(-1, -1));
-        FluidGlass.setAmbientBlur(glassBackdrop, allowGlassBlur());
+        glassBackdrop = null;
+        if (!preferences.getBoolean("reduce_glass_transparency", false)) {
+            glassBackdrop = new FluidGlass.Backdrop(this);
+            scene.addView(glassBackdrop, new FrameLayout.LayoutParams(-1, -1));
+            FluidGlass.setAmbientBlur(glassBackdrop, allowGlassBlur());
+        }
         scene.addView(scroll, new FrameLayout.LayoutParams(-1, -1));
         setContentView(scene);
         TextView back = text("‹   НАЗАД К НАСТРОЙКАМ", 13, ACCENT, true);
@@ -296,6 +300,8 @@ public final class FluidLabsActivity extends Activity {
                "show_vsync", false);
         toggle("Экран без сна", "Не выключать экран, пока FluidGram открыт. Может повышать расход энергии.",
                "keep_screen_on", false);
+        toggle("Непрозрачные карточки", "Контрастные поверхности без декоративного размытия и прозрачных слоёв в Labs. Можно отключить в любой момент.",
+               "reduce_glass_transparency", false);
         toggle("Glass highlights", "Световые отражения и контрастная подсветка стеклянных элементов.",
                "neon_labs", true);
         toggle("Тактильное переключение", "Короткий виброотклик при смене камеры видеокружка.",
@@ -529,7 +535,7 @@ public final class FluidLabsActivity extends Activity {
         panel.addView(sw);
         sw.setOnCheckedChangeListener((button, isChecked) -> {
             preferences.edit().putBoolean(key, isChecked).apply();
-            if ("neon_labs".equals(key)) render();
+            if ("neon_labs".equals(key) || "reduce_glass_transparency".equals(key)) render();
             FluidRefresh.refresh(this);
         });
         panel.setOnClickListener(v -> sw.setChecked(!sw.isChecked()));

@@ -13,6 +13,7 @@ import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.RippleDrawable;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.graphics.RenderEffect;
 import android.view.View;
@@ -28,6 +29,17 @@ public final class FluidGlass {
         float density = context.getResources().getDisplayMetrics().density;
         boolean highlights = context.getSharedPreferences("fluidgram_labs", Context.MODE_PRIVATE)
                 .getBoolean("neon_labs", true);
+        // Accessibility / low-compositing option: fully opaque panels and no shaders.
+        // This is intentionally opt-in and only affects FluidGram Labs surfaces.
+        boolean opaque = context.getSharedPreferences("fluidgram_labs", Context.MODE_PRIVATE)
+                .getBoolean("reduce_glass_transparency", false);
+        if (opaque) {
+            GradientDrawable solid = new GradientDrawable();
+            solid.setColor(prominent ? 0xFF253B4B : 0xFF1B2D3C);
+            solid.setCornerRadius((prominent ? 28f : 22f) * density);
+            solid.setStroke(Math.max(1, Math.round(density)), 0xFF64879A);
+            return new RippleDrawable(ColorStateList.valueOf(0x33FFFFFF), solid, null);
+        }
         Drawable panel = new Panel(density, prominent, highlights);
         return new RippleDrawable(ColorStateList.valueOf(0x33FFFFFF), panel, null);
     }

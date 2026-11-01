@@ -353,7 +353,7 @@ def apply(root, api_id, api_hash):
 
 
     labs_dir = Path(__file__).resolve().parents[1] / "android"
-    for name in ("FluidRefresh.java", "FluidLabsActivity.java", "FluidGlass.java", "FluidEnergy.java", "FluidVpnProfile.java"):
+    for name in ("FluidRefresh.java", "FluidLabsActivity.java", "FluidGlass.java", "FluidEnergy.java", "FluidVpnProfile.java", "FluidVpnTunnel.java"):
         original = labs_dir / name
         if not original.is_file():
             raise RuntimeError(f"FluidGram Labs source missing: {original}")
@@ -409,15 +409,27 @@ def apply(root, api_id, api_hash):
         <activity android:name="org.telegram.ui.FluidLabsActivity"
                   android:exported="false"
                   android:theme="@style/Theme.TMessages.Start"
-                  android:label="FluidGram Labs" />''', manifest))
+                  android:label="FluidGram Labs" />
+        <service android:name="com.wireguard.android.backend.GoBackend$VpnService"
+                 android:permission="android.permission.BIND_VPN_SERVICE"
+                 android:exported="false">
+            <intent-filter>
+                <action android:name="android.net.VpnService" />
+            </intent-filter>
+        </service>''', manifest))
 
     # Firebase Google Services must run on the application module only.
     # Its Android library module retains the upstream namespace, not our app ID.
     library_gradle = root / "TMessagesProj/build.gradle"
-    rewrite(library_gradle, lambda s: replace_exact(
-        s, "apply plugin: 'com.google.gms.google-services'",
-        "// FluidGram: google-services plugin is applied by AppStandalone only",
-        library_gradle))
+    def patch_library_gradle(s):
+        s = replace_exact(s, "apply plugin: 'com.google.gms.google-services'",
+            "// FluidGram: google-services plugin is applied by AppStandalone only",
+            library_gradle)
+        return replace_exact(s, "    implementation 'androidx.core:core:1.16.0'",
+            "    implementation 'androidx.core:core:1.16.0'\n"
+            "    implementation 'com.wireguard.android:tunnel:1.0.20260102'",
+            library_gradle)
+    rewrite(library_gradle, patch_library_gradle)
 
     strings = root / "TMessagesProj/src/main/res/values/strings.xml"
     def patch_strings(s):
@@ -444,7 +456,7 @@ def apply(root, api_id, api_hash):
                                 '<item name="android:windowBackground">#0B1524</item>', styles)
         return head + start_tag + section + "</style>" + tail
     rewrite(styles, patch_styles)
-    print("FluidGram v1.5 shared power receiver and thermal build repair applied. Install package: " + PACKAGE + ".web")
+    print("FluidGram v1.6 WireGuard opt-in VPN and glass power guard applied. Install package: " + PACKAGE + ".web")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

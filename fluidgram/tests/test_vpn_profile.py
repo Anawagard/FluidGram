@@ -28,6 +28,9 @@ public final class FluidVpnProfileSmoke {
             case "badroute": src = src.replace("0.0.0.0/0, ::/0", "999.2.3.4/55"); break;
             case "badaddress": src = src.replace("10.1.2.3/32", "10.1.2.999/32"); break;
             case "badport": src = src.replace(":51820", ":65536"); break;
+            case "badipv6": src = src.replace("::/0", "2001:db8::g/64"); break;
+            case "badipv6endpoint": src = src.replace("example.com:51820", "[2001:db8::g]:51820"); break;
+            case "badipv6colon": src = src.replace("example.com:51820", "[1:2:3:4:5:6:7:8:]:51820"); break;
             case "unsafe": src += "PostUp = echo unsafe\n"; break;
             case "duplicate": src = src.replace("Address = ", "PrivateKey = " + "A".repeat(43) + "=\nAddress = "); break;
             case "ipv6endpoint": src = src.replace("example.com:51820", "[2001:db8::1]:51820"); break;
@@ -89,6 +92,9 @@ class WireGuardPreflight(unittest.TestCase):
     def test_reject_invalid_allowed_ips(self): self.check("badroute", "REJECTED")
     def test_reject_invalid_interface_address(self): self.check("badaddress", "REJECTED")
     def test_reject_invalid_endpoint_port(self): self.check("badport", "REJECTED")
+    def test_reject_invalid_ipv6_route(self): self.check("badipv6", "REJECTED")
+    def test_reject_invalid_ipv6_endpoint(self): self.check("badipv6endpoint", "REJECTED")
+    def test_reject_trailing_colon_ipv6(self): self.check("badipv6colon", "REJECTED")
     def test_reject_unsupported_shell_directive(self): self.check("unsafe", "REJECTED")
     def test_reject_duplicate_private_key(self): self.check("duplicate", "REJECTED")
     def test_accept_numeric_ipv6_endpoint(self): self.check("ipv6endpoint", "OK")

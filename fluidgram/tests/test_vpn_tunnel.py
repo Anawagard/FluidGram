@@ -167,6 +167,7 @@ class WireGuardControllerRegression(unittest.TestCase):
     def test_android_manifest_and_pinned_dependency(self):
         patch = (ROOT / "scripts" / "apply_fluidgram.py").read_text()
         self.assertIn("com.wireguard.android:tunnel:1.0.20260102", patch)
+        self.assertIn('"minSdkVersion 23", "minSdkVersion 24"', patch)
         self.assertIn("com.wireguard.android.backend.GoBackend$VpnService", patch)
         self.assertIn("android.permission.BIND_VPN_SERVICE", patch)
         self.assertIn('android:exported="false"', patch)

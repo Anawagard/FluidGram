@@ -107,7 +107,8 @@ public final class FluidLabsActivity extends Activity {
     }
 
     private void openVpnFile() {
-        if (FluidVpnTunnel.isConnected() || FluidVpnTunnel.isBusy()) {
+        if (FluidVpnTunnel.isConnected() || FluidVpnTunnel.isBusy()
+                || FluidVpnTunnel.requiresCleanup()) {
             Toast.makeText(this, "Сначала отключите текущий VPN", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -128,7 +129,13 @@ public final class FluidLabsActivity extends Activity {
             return;
         }
         if (FluidVpnTunnel.isBusy() || FluidVpnTunnel.isConnected()) return;
-        Intent consent = android.net.VpnService.prepare(this);
+        Intent consent;
+        try {
+            consent = android.net.VpnService.prepare(this);
+        } catch (SecurityException ignored) {
+            Toast.makeText(this, "Android запретил запуск VPN", Toast.LENGTH_LONG).show();
+            return;
+        }
         if (consent != null) {
             try {
                 startActivityForResult(consent, VPN_PERMISSION_REQUEST);

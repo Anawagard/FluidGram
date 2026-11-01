@@ -4,6 +4,7 @@ Unofficial Telegram Android build for OnePlus 15 / ColorOS 17. Overlay is applie
 
 ## What is implemented
 
+- **Glass rendering optimization (v1.1):** glass-panel gradients, reflective paths, and ambient backdrop shaders are cached until bounds/size changes instead of allocated on every draw; redundant RenderEffect updates are suppressed. No per-frame loops. Battery savings still require device measurements.
 - **Glass Labs:** translucent glass surfaces, static specular highlights, decorative ambient blur on Android 12+, fallback without blur. Blur is suspended when the Labs activity is paused, the battery is at or below 20%, or Android power saver is enabled.
 - **Refresh hints:** ColorOS automatic, high-refresh request, highest advertised compatible mode, smart low-battery fallback, and scroll-only adaptive. Android and ColorOS decide the actual physical refresh. Neither 1 Hz nor 165 Hz is guaranteed.
 - **Power guard:** scroll hints coalesced to at most ten updates/second, released when idle or when the activity is paused. Display HUD is event-driven, not a per-frame FPS monitor.

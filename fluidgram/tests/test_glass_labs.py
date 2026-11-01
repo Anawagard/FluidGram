@@ -11,6 +11,18 @@ class GlassLabsRegression(unittest.TestCase):
         self.assertNotIn("Choreographer", source)
         self.assertNotIn("postDelayed", source)
         self.assertIn("PixelFormat.TRANSLUCENT", source)
+    def test_glass_caches_shaders_and_avoids_redundant_gpu_blur(self):
+        source = (ROOT / "android" / "FluidGlass.java").read_text()
+        self.assertIn("onBoundsChange(Rect bounds)", source)
+        self.assertIn("onSizeChanged(int w, int h, int oldw, int oldh)", source)
+        self.assertIn("if (blurEnabled == enabled) return;", source)
+        self.assertIn("paint.setShader(fillShader)", source)
+        self.assertIn("paint.setShader(baseShader)", source)
+        panel_draw = source.split("@Override public void draw(Canvas canvas) {", 1)[1].split("@Override public void setAlpha", 1)[0]
+        self.assertNotIn("new LinearGradient", panel_draw)
+        self.assertNotIn("new Path", panel_draw)
+        self.assertNotIn("new RectF", panel_draw)
+
     def test_glass_is_used_in_settings_and_paused(self):
         source = (ROOT / "android" / "FluidLabsActivity.java").read_text()
         self.assertGreaterEqual(source.count("FluidGlass.surface("), 3)

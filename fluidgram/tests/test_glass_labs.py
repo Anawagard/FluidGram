@@ -119,7 +119,7 @@ class GlassLabsRegression(unittest.TestCase):
         self.assertIn("FluidEnergy.report(this)", labs)
         self.assertIn("FluidEnergy.reset(this)", labs)
         self.assertIn('"FluidEnergy.java"', patch)
-        self.assertIn("GLASS LABS  1.5", labs)
+        self.assertIn("GLASS LABS  1.6", labs)
 
     def test_battery_threshold_is_event_driven_and_coalesced(self):
         source = (ROOT / "android" / "FluidRefresh.java").read_text()

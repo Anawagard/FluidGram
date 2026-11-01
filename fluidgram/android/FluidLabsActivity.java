@@ -90,9 +90,13 @@ public final class FluidLabsActivity extends Activity {
         // User-selected URI is read once. No persistable permission or secret storage.
         try (java.io.InputStream input = getContentResolver().openInputStream(data.getData())) {
             FluidVpnProfile.Info info = FluidVpnProfile.inspect(input);
-            vpnImportSummary = "Проверено: " + info.peers + " peer · "
-                    + (info.fullTunnel ? "общий маршрут" : "выборочные маршруты")
-                    + (info.hasDns ? " · DNS задан" : "");
+            String coverage = info.fullTunnel ? "IPv4 и IPv6 · оба маршрута /0"
+                    : info.ipv4Default ? "только IPv4 /0 · IPv6 вне полного маршрута"
+                    : info.ipv6Default ? "только IPv6 /0 · IPv4 вне полного маршрута"
+                    : "только выборочные маршруты";
+            vpnImportSummary = "Формат проверен: " + info.peers + " peer · " + coverage
+                    + (info.hasDns ? " · DNS указан" : " · DNS не указан")
+                    + ". Это НЕ проверка подключения или защиты от утечек.";
             Toast.makeText(this, "Формат профиля проверен. VPN не подключён.", Toast.LENGTH_LONG).show();
         } catch (FluidVpnProfile.InvalidProfile invalid) {
             // These messages are fixed parser strings and never contain private keys.
@@ -159,7 +163,7 @@ public final class FluidLabsActivity extends Activity {
         hero.setPadding(dp(21), dp(22), dp(21), dp(23));
         hero.setBackground(FluidGlass.surface(this, true));
         hero.setElevation(dp(8));
-        TextView eyebrow = text("FLUIDGRAM  /  GLASS LABS  1.1", 12, 0xFFB6FFEE, true);
+        TextView eyebrow = text("FLUIDGRAM  /  GLASS LABS  1.2", 12, 0xFFB6FFEE, true);
         hero.addView(eyebrow, margins(9));
         TextView headline = text("Живое стекло.\nТвой Telegram.", 27, Color.WHITE, true);
         hero.addView(headline, margins(10));
@@ -223,7 +227,7 @@ public final class FluidLabsActivity extends Activity {
             });
         section("VPN · подготовка");
         card("Импорт WireGuard .conf", vpnImportSummary,
-            "Проверка формата и маршрутов без подключения. Секретные ключи не сохраняются. "
+            "Строгая проверка IPv4/IPv6, ключей и адресов без подключения. Секретные ключи не сохраняются. "
             + "Файл ограничен 64 КиБ; серверы не предоставляются.",
             this::openVpnFile);
         card("Встроенное подключение", "Пока недоступно · туннель не создан",

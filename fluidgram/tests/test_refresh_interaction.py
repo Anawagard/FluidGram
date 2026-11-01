@@ -83,3 +83,9 @@ def test_notification_settings_preserve_telegram_push():
     assert 'areNotificationsEnabled()' in labs
     assert 'ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS' in labs
     assert 'FirebaseMessagingService' not in labs
+
+def test_touch_restores_165_after_bridge_is_cancelled():
+    vendor = (BASE / "android/FluidOplusRate.java").read_text()
+    assert 'requested && lastRateId == RATE_165' in vendor
+    assert 'lastRateId = RATE_144;' in vendor
+    assert 'lastRateId = RATE_NONE;' in vendor

@@ -16,6 +16,7 @@ public final class FluidOplusRate {
     private static final int RATE_144 = 4;
     private static final int RATE_NONE = 0;
     private static boolean requested;
+    private static int lastRateId;
     private static int acceptedVotes;
     private static int successfulReleases;
     private static int failedReleases;
@@ -73,9 +74,12 @@ public final class FluidOplusRate {
     }
 
     public static boolean request(String packageName) {
-        if (requested) return true;
+        if (requested && lastRateId == RATE_165) return true;
         requested = call(packageName, RATE_165);
-        if (requested) acceptedVotes++;
+        if (requested) {
+            lastRateId = RATE_165;
+            acceptedVotes++;
+        }
         return requested;
     }
     /** Diagnostic only: 144Hz bridge between the 165 vote and normal auto mode.
@@ -84,14 +88,17 @@ public final class FluidOplusRate {
     public static boolean bridge144(String packageName) {
         if (!requested) return false;
         boolean ok = call(packageName, RATE_144);
-        if (ok) transitions144++;
-        else failures144++;
+        if (ok) {
+            lastRateId = RATE_144;
+            transitions144++;
+        } else failures144++;
         return ok;
     }
     public static void release(String packageName) {
         if (requested) {
             if (call(packageName, RATE_NONE)) {
                 requested = false;
+                lastRateId = RATE_NONE;
                 successfulReleases++;
             } else {
                 failedReleases++;
@@ -105,6 +112,7 @@ public final class FluidOplusRate {
     public static void confirmRelease(String packageName) {
         if (call(packageName, RATE_NONE)) {
             requested = false;
+            lastRateId = RATE_NONE;
             successfulReleases++;
         } else {
             failedReleases++;
@@ -115,6 +123,7 @@ public final class FluidOplusRate {
                 + "; принятых 165: " + acceptedVotes
                 + "; сбросов: " + successfulReleases
                 + "; ошибок сброса: " + failedReleases
+                + "; последний rateId: " + lastRateId
                 + "; переходов 144: " + transitions144
                 + "; ошибок перехода: " + failures144;
     }

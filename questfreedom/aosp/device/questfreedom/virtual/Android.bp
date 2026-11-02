@@ -1,0 +1,6 @@
+android_app_import {
+ name: "QuestFreedomLauncher",
+ apk: "prebuilts/QuestFreedomLauncher.apk",
+ presigned: true,
+ privileged: false,
+}

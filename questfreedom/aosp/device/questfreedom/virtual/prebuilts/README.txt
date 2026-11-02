@@ -1,0 +1,1 @@
+Copy questfreedom/app/build/outputs/apk/debug/app-debug.apk here as QuestFreedomLauncher.apk before AOSP build. No ROM image has been built.

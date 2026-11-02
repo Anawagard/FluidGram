@@ -55,6 +55,9 @@ def verify():
         connections = (root / "TMessagesProj/src/main/java/org/telegram/tgnet/ConnectionsManager.java").read_text(encoding="utf8")
         privacy = (root / "TMessagesProj/src/main/java/org/telegram/tgnet/FluidPrivacy.java").read_text(encoding="utf8")
         assert "FluidPrivacy.shouldSuppressTyping(object)" in connections
+        assert "FluidPrivacy.shouldSuppressVideoUploadIndicator(object)" in connections
+        assert "TL_sendMessageUploadVideoAction" in privacy
+        assert "TL_sendMessageUploadRoundAction" in privacy
         assert "No native_sendRequest" in connections
         assert "instanceof TLRPC.TL_sendMessageTypingAction" in privacy
         assert "FluidRefresh.resume(this)" in launcher

@@ -445,7 +445,7 @@ def apply(root, api_id, api_hash):
         raise RuntimeError("FluidPrivacy source missing or destination already exists")
     privacy_dest.write_text(privacy_source.read_text(encoding="utf8"), encoding="utf8")
 
-    # Intercept only opted-in activity RPCs (typing, recording, photo-upload indicator),
+    # Intercept only opted-in activity RPCs (typing, recording, photo/video-upload indicators),
     # never actual file uploads, read receipts, online state or secret-chat traffic. This is the final Java RPC dispatch
     # before serialization, so all call sites share the same opt-in policy.
     connections = root / "TMessagesProj/src/main/java/org/telegram/tgnet/ConnectionsManager.java"
@@ -456,7 +456,8 @@ def apply(root, api_id, api_hash):
         if (FluidPrivacy.shouldSuppressTyping(object)
                 || FluidPrivacy.shouldSuppressRecordingAudio(object)
                 || FluidPrivacy.shouldSuppressRecordingVideo(object)
-                || FluidPrivacy.shouldSuppressPhotoUploadIndicator(object)) {
+                || FluidPrivacy.shouldSuppressPhotoUploadIndicator(object)
+                || FluidPrivacy.shouldSuppressVideoUploadIndicator(object)) {
             // No native_sendRequest: this activity event never reaches Telegram.
             // Return a local success so activity throttles can clear normally.
             Utilities.stageQueue.postRunnable(() -> {

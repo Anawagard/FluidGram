@@ -49,4 +49,16 @@ public final class FluidPrivacy {
                 || typing.action instanceof TLRPC.TL_sendMessageRecordRoundAction)
                 && enabled("ghost_hide_recording_video");
     }
+    /**
+     * Suppresses only the outgoing video/round-video upload *activity indicator*.
+     * Real media transfers and messages are not affected. Server-side presence,
+     * read receipts, and activity from other devices remain unchanged.
+     */
+    public static boolean shouldSuppressVideoUploadIndicator(TLObject request) {
+        if (!(request instanceof TLRPC.TL_messages_setTyping)) return false;
+        TLRPC.TL_messages_setTyping typing = (TLRPC.TL_messages_setTyping) request;
+        return (typing.action instanceof TLRPC.TL_sendMessageUploadVideoAction
+                || typing.action instanceof TLRPC.TL_sendMessageUploadRoundAction)
+                && enabled("ghost_hide_video_upload_indicator");
+    }
 }

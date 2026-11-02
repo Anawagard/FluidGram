@@ -338,6 +338,13 @@ public final class FluidLabsActivity extends Activity {
                + "или получение фото. Не скрывает онлайн, прочтение и действия "
                + "других клиентов Telegram. Проверьте с другим аккаунтом.",
                "ghost_hide_photo_upload_indicator", false);
+        toggle("Не показывать «отправляет видео…»",
+               "По отдельному согласию блокирует только исходящие индикаторы "
+               + "загрузки видео и видеокружков (messages.setTyping: uploadVideo / "
+               + "uploadRound). Сами файлы и сообщения продолжают отправляться. "
+               + "Не скрывает статус онлайн, прочтение или активность других "
+               + "клиентов Telegram. Проверьте с другим аккаунтом.",
+               "ghost_hide_video_upload_indicator", false);
         section("УВЕДОМЛЕНИЯ  /  TELEGRAM");
         android.app.NotificationManager notificationManager =
                 (android.app.NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);

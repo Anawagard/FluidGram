@@ -345,6 +345,12 @@ public final class FluidLabsActivity extends Activity {
                + "Не скрывает статус онлайн, прочтение или активность других "
                + "клиентов Telegram. Проверьте с другим аккаунтом.",
                "ghost_hide_video_upload_indicator", false);
+        toggle("Не показывать «отправляет файл…»",
+               "Отдельно блокирует только исходящий индикатор загрузки документа "
+               + "(messages.setTyping: uploadDocument). Передача файлов и сообщений "
+               + "не блокируется. Статус онлайн, прочтение, секретные чаты и "
+               + "активность других устройств не скрываются. Проверьте с другим аккаунтом.",
+               "ghost_hide_document_upload_indicator", false);
         section("УВЕДОМЛЕНИЯ  /  TELEGRAM");
         android.app.NotificationManager notificationManager =
                 (android.app.NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);

@@ -480,7 +480,8 @@ def apply(root, api_id, api_hash):
                 || FluidPrivacy.shouldSuppressRecordingAudio(object)
                 || FluidPrivacy.shouldSuppressRecordingVideo(object)
                 || FluidPrivacy.shouldSuppressPhotoUploadIndicator(object)
-                || FluidPrivacy.shouldSuppressVideoUploadIndicator(object)) {
+                || FluidPrivacy.shouldSuppressVideoUploadIndicator(object)
+                || FluidPrivacy.shouldSuppressDocumentUploadIndicator(object)) {
             // No native_sendRequest: this activity event never reaches Telegram.
             // Return a local success so activity throttles can clear normally.
             Utilities.stageQueue.postRunnable(() -> {

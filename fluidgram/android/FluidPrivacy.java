@@ -61,4 +61,15 @@ public final class FluidPrivacy {
                 || typing.action instanceof TLRPC.TL_sendMessageUploadRoundAction)
                 && enabled("ghost_hide_video_upload_indicator");
     }
+    /**
+     * Opt-in suppression of the outgoing document-upload activity indicator.
+     * Only messages.setTyping(uploadDocument) is filtered. The actual upload,
+     * message delivery, encrypted chats, and server-side presence are untouched.
+     */
+    public static boolean shouldSuppressDocumentUploadIndicator(TLObject request) {
+        if (!(request instanceof TLRPC.TL_messages_setTyping)) return false;
+        TLRPC.TL_messages_setTyping typing = (TLRPC.TL_messages_setTyping) request;
+        return typing.action instanceof TLRPC.TL_sendMessageUploadDocumentAction
+                && enabled("ghost_hide_document_upload_indicator");
+    }
 }

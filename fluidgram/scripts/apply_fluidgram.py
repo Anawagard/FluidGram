@@ -41,14 +41,15 @@ THEME_CHANGES = {
     "defaultColors[key_chats_tabletSelectedOverlay] = 0x0f000000;": "defaultColors[key_chats_tabletSelectedOverlay] = 0x1816A6A2;",
     "defaultColors[key_chats_actionBackground] = 0xff65a9e0;": "defaultColors[key_chats_actionBackground] = 0xff16A6A2;",
     "defaultColors[key_chats_actionPressedBackground] = 0xff569dd6;": "defaultColors[key_chats_actionPressedBackground] = 0xff0B817E;",
-    "defaultColors[key_chat_outBubble] = 0xffefffde;": "defaultColors[key_chat_outBubble] = 0xffDDF7F4;",
-    "defaultColors[key_chat_outBubbleSelected] = 0xffd9f7c5;": "defaultColors[key_chat_outBubbleSelected] = 0xffCAEEE9;",
+    "defaultColors[key_chat_outBubble] = 0xffefffde;": "defaultColors[key_chat_outBubble] = 0xC8DDF7F4;",
+    "defaultColors[key_chat_outBubbleSelected] = 0xffd9f7c5;": "defaultColors[key_chat_outBubbleSelected] = 0xE4CAEEE9;",
     "defaultColors[key_chat_outMediaIcon] = 0xffefffde;": "defaultColors[key_chat_outMediaIcon] = 0xffDDF7F4;",
     "defaultColors[key_chat_outMediaIconSelected] = 0xffe1f8cf;": "defaultColors[key_chat_outMediaIconSelected] = 0xffCAEEE9;",
-    # ColorOS 17 Telegram conversation: passive frosted composer, legible
+    # ColorOS 17 Telegram conversation: frosted bubbles over wallpapers,
+    # selected bubbles remain more opaque for readability; legible
     # message bubbles and coordinated reply/read indicators. No frame loops.
-    "defaultColors[key_chat_inBubble] = 0xffffffff;": "defaultColors[key_chat_inBubble] = 0xffF8FCFE;",
-    "defaultColors[key_chat_inBubbleSelected] = 0xffecf7fd;": "defaultColors[key_chat_inBubbleSelected] = 0xffE7F3F7;",
+    "defaultColors[key_chat_inBubble] = 0xffffffff;": "defaultColors[key_chat_inBubble] = 0xD0F8FCFE;",
+    "defaultColors[key_chat_inBubbleSelected] = 0xffecf7fd;": "defaultColors[key_chat_inBubbleSelected] = 0xE4E7F3F7;",
     "defaultColors[key_chat_messagePanelBackground] = 0xffffffff;": "defaultColors[key_chat_messagePanelBackground] = 0xF2F8FCFE;",
     "defaultColors[key_chat_messagePanelHint] = 0xff858a84;": "defaultColors[key_chat_messagePanelHint] = 0xff728A97;",
     "defaultColors[key_chat_messagePanelIcons] = 0xff8e959b;": "defaultColors[key_chat_messagePanelIcons] = 0xff6C8794;",

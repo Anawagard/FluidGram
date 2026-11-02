@@ -39,6 +39,28 @@ class ConversationColorosRegression(unittest.TestCase):
                 self.assertEqual(len(values), 1)
                 self.assertIn(color + ";", values[0])
 
+    def test_light_chat_bubbles_are_frosted_but_selected_remain_readable(self):
+        # Actual Telegram chat bubble theme keys, not a Labs-only preview.
+        light = palette("THEME_CHANGES")
+        expected = {
+            "key_chat_inBubble": 0xD0F8FCFE,
+            "key_chat_outBubble": 0xC8DDF7F4,
+            "key_chat_inBubbleSelected": 0xE4E7F3F7,
+            "key_chat_outBubbleSelected": 0xE4CAEEE9,
+        }
+        for key, color in expected.items():
+            with self.subTest(key=key):
+                old = next(k for k in light if k.startswith("defaultColors[" + key + "] ="))
+                value = int(light[old].split("0x", 1)[1].split(";", 1)[0], 16)
+                self.assertEqual(value, color)
+                self.assertGreaterEqual(value >> 24, 0xC0)
+                self.assertLess(value >> 24, 0xFF)
+        for side in ("in", "out"):
+            self.assertGreater(
+                expected["key_chat_" + side + "BubbleSelected"] >> 24,
+                expected["key_chat_" + side + "Bubble"] >> 24,
+            )
+
     def test_light_composer_is_subtly_translucent_not_invisible(self):
         light = palette("THEME_CHANGES")
         value = next(v for k, v in light.items()

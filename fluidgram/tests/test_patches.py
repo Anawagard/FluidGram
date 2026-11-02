@@ -16,7 +16,7 @@ class FluidGramTest(unittest.TestCase):
     def test_coloros(self):
         self.assertIn("defaultColors[key_chat_outBubble] = 0xffefffde;", THEME_CHANGES)
     def test_fluidglass(self):
-        self.assertEqual(FLUIDGLASS_COLORS["chat_outBubble"], "#C8295358")
+        self.assertEqual(FLUIDGLASS_COLORS["chat_outBubble"], "#64295358")
         self.assertEqual(FLUIDGLASS_COLORS["windowBackgroundWhite"], "#ff101c2b")
         self.assertGreaterEqual(len(FLUIDGLASS_COLORS), 20)
     def test_motion(self):

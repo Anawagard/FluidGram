@@ -12,8 +12,8 @@ def test_recording_indicator_is_opt_in_and_audio_only():
     assert 'instanceof TLRPC.TL_messages_setTyping' in recording
     assert 'instanceof TLRPC.TL_sendMessageRecordAudioAction' in recording
     assert 'enabled("ghost_hide_recording_audio")' in recording
-    assert 'TL_sendMessageUploadAudioAction' not in privacy
-    assert 'TL_sendMessageRecordVideoAction' not in privacy
+    assert 'TL_sendMessageUploadAudioAction' not in recording.split('    }', 1)[0]
+    assert 'TL_sendMessageRecordVideoAction' not in recording.split('    }', 1)[0]
     assert 'TL_messages_setEncryptedTyping' not in privacy
     assert 'TL_account_updateStatus' not in privacy
     assert 'TL_messages_readHistory' not in privacy
@@ -31,7 +31,7 @@ def test_recording_and_typing_have_independent_controls():
 def test_recording_filter_runs_before_native_request():
     assert 'FluidPrivacy.shouldSuppressRecordingAudio(object)' in patch
     hook = patch.split('if (FluidPrivacy.shouldSuppressTyping(object)', 1)[1]
-    assert '|| FluidPrivacy.shouldSuppressRecordingAudio(object)) {' in hook
+    assert '|| FluidPrivacy.shouldSuppressRecordingAudio(object)' in hook
     assert 'return;' in hook.split('if (BuildVars.LOGS_ENABLED)', 1)[0]
     assert 'onComplete.run(new TLRPC.TL_boolTrue(), null)' in hook
     assert 'onCompleteTimestamp.run(new TLRPC.TL_boolTrue(), null, 0L)' in hook

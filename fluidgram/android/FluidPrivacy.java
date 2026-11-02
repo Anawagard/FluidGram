@@ -72,4 +72,16 @@ public final class FluidPrivacy {
         return typing.action instanceof TLRPC.TL_sendMessageUploadDocumentAction
                 && enabled("ghost_hide_document_upload_indicator");
     }
+    /**
+     * Opt-in suppression of the ordinary audio-upload activity indicator only.
+     * Does not stop the audio transfer, voice message, push, read receipts or presence.
+     * Encrypted chats and activity from other devices are not intercepted.
+     */
+    public static boolean shouldSuppressAudioUploadIndicator(TLObject request) {
+        if (!(request instanceof TLRPC.TL_messages_setTyping)) return false;
+        TLRPC.TL_messages_setTyping typing = (TLRPC.TL_messages_setTyping) request;
+        return typing.action instanceof TLRPC.TL_sendMessageUploadAudioAction
+                && enabled("ghost_hide_audio_upload_indicator");
+    }
+
 }

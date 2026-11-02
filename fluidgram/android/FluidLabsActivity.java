@@ -27,6 +27,7 @@ import android.view.HapticFeedbackConstants;
 public final class FluidLabsActivity extends Activity {
     private LinearLayout root;
     private ScrollView labsScroll;
+    private static final String STATE_LABS_SCROLL_Y = "fluidgram_labs_scroll_y";
     private final java.util.Map<String, View> sectionAnchors = new java.util.HashMap<>();
     private FluidGlass.Backdrop glassBackdrop;
     private SharedPreferences preferences;
@@ -61,6 +62,25 @@ public final class FluidLabsActivity extends Activity {
         getWindow().setStatusBarColor(BG);
         getWindow().setNavigationBarColor(BG);
         render();
+        if (savedInstance != null) {
+            restoreScrollAfterRecreation(savedInstance.getInt(STATE_LABS_SCROLL_Y, 0));
+        }
+    }
+    @Override protected void onSaveInstanceState(Bundle outState) {
+        // Keep the current Labs section visible after a rotation or Activity recreation.
+        // UI-only state: never persist VPN profiles or chat data.
+        outState.putInt(STATE_LABS_SCROLL_Y, labsScroll == null ? 0 : labsScroll.getScrollY());
+        super.onSaveInstanceState(outState);
+    }
+    private void restoreScrollAfterRecreation(int savedY) {
+        final ScrollView target = labsScroll;
+        if (target == null || savedY <= 0) return;
+        target.post(() -> {
+            // Do not restore into a stale view after a theme change or Activity finish.
+            if (target != labsScroll || isFinishing() || isDestroyed()) return;
+            int maxY = Math.max(0, root.getHeight() - target.getHeight());
+            target.scrollTo(0, Math.min(savedY, maxY));
+        });
     }
     @Override protected void onResume() {
         super.onResume();

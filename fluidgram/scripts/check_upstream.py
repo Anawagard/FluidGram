@@ -66,6 +66,8 @@ def verify():
         assert 'android:exported="false"' in manifest
         assert "Экран · частота HUD" in labs and "Glass highlights" in labs
         assert "FluidGlass.surface(this, true)" in labs
+        assert '"experimental_glass_bubbles", false' in labs
+        assert "FluidGlass.chatBubbleColor(" in (root / "TMessagesProj/src/main/java/org/telegram/ui/ActionBar/Theme.java").read_text(encoding="utf8")
         assert "FluidGlass.setAmbientBlur(glassBackdrop, false)" in labs
         glass = (root / "TMessagesProj/src/main/java/org/telegram/ui/FluidGlass.java").read_text(encoding="utf8")
         assert "RenderEffect.createBlurEffect" in glass

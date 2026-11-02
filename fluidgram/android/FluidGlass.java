@@ -25,6 +25,25 @@ import android.view.View;
 public final class FluidGlass {
     private FluidGlass() {}
 
+    /**
+     * Experimental chat-bubble transparency. This is real theme-color plumbing,
+     * not background blur/refraction. Default OFF; original theme colors stay
+     * untouched until the user opts in. A cold app restart refreshes cached
+     * Telegram message drawables after changing this setting.
+     */
+    public static int chatBubbleColor(Context context, int key, int color) {
+        if (context == null || (key != org.telegram.ui.ActionBar.Theme.key_chat_inBubble
+                && key != org.telegram.ui.ActionBar.Theme.key_chat_outBubble)) {
+            return color;
+        }
+        boolean enabled = context.getSharedPreferences("fluidgram_labs", Context.MODE_PRIVATE)
+                .getBoolean("experimental_glass_bubbles", false);
+        if (!enabled) return color;
+        // Halve the existing alpha; keep RGB and text colors unchanged.
+        int alpha = (color >>> 24) / 2;
+        return (color & 0x00FFFFFF) | (alpha << 24);
+    }
+
     public static Drawable surface(Context context, boolean prominent) {
         float density = context.getResources().getDisplayMetrics().density;
         boolean highlights = context.getSharedPreferences("fluidgram_labs", Context.MODE_PRIVATE)

@@ -404,6 +404,20 @@ def apply(root, api_id, api_hash):
         return s
     rewrite(palette, patch_palette)
 
+    # Intercept actual Telegram theme colors for message bubble drawables.
+    # Preserve every other key and all network/message code untouched.
+    theme_file = root / "TMessagesProj/src/main/java/org/telegram/ui/ActionBar/Theme.java"
+    def patch_bubble_glass(s):
+        original = "    public static int getColor(int key, boolean[] isDefault, boolean ignoreAnimation) {"
+        replacement = """    public static int getColor(int key, boolean[] isDefault, boolean ignoreAnimation) {
+        return org.telegram.ui.FluidGlass.chatBubbleColor(
+                org.telegram.messenger.ApplicationLoader.applicationContext, key,
+                fluidGramBaseColor(key, isDefault, ignoreAnimation));
+    }
+
+    private static int fluidGramBaseColor(int key, boolean[] isDefault, boolean ignoreAnimation) {"""
+        return replace_exact(s, original, replacement, theme_file)
+    rewrite(theme_file, patch_bubble_glass)
 
     # Repaint Telegram's shipped dark theme, preserving a fully defined
     # contrast-safe palette instead of trying to darken light defaults.

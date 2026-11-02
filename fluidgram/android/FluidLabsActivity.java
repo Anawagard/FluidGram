@@ -368,6 +368,12 @@ public final class FluidLabsActivity extends Activity {
                "reduce_motion_labs", false);
         toggle("Glass highlights", "Световые отражения и контрастная подсветка стеклянных элементов.",
                "neon_labs", true);
+        toggle("Liquid Glass · сообщения (эксперимент)",
+               "Дополнительно уменьшает непрозрачность входящих и исходящих пузырей в 2 раза "
+               + "в реальных чатах Telegram, включая светлую и тёмную темы. "
+               + "Это прозрачность без оптического преломления и без размытия фона. "
+               + "Для применения полностью закройте и снова откройте FluidGram.",
+               "experimental_glass_bubbles", false);
         toggle("Тактильное переключение", "Короткий виброотклик при смене камеры видеокружка.",
                "camera_haptic", true);
         section("ПРИВАТНОСТЬ  /  GHOST LAB");
@@ -656,6 +662,10 @@ public final class FluidLabsActivity extends Activity {
         sw.setOnCheckedChangeListener((button, isChecked) -> {
             preferences.edit().putBoolean(key, isChecked).apply();
             if ("neon_labs".equals(key) || "reduce_glass_transparency".equals(key)) render();
+            if ("experimental_glass_bubbles".equals(key)) {
+                Toast.makeText(this, "Перезапустите FluidGram для применения стекла в чатах",
+                        Toast.LENGTH_LONG).show();
+            }
             FluidRefresh.refresh(this);
         });
         panel.setOnClickListener(v -> sw.setChecked(!sw.isChecked()));

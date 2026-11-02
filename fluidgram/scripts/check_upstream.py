@@ -86,7 +86,7 @@ def verify():
         assert "FluidMotion.isOnePlus15()" in camera
         assert "\"Dark Blue\"" in (root / "TMessagesProj/src/main/java/org/telegram/ui/ActionBar/Theme.java").read_text(encoding="utf8")
         assert "fluidglass_v03_applied" not in (root / "TMessagesProj/src/main/java/org/telegram/ui/ActionBar/Theme.java").read_text(encoding="utf8")
-        assert "chat_outBubble=#ff1c4951" in (root / "TMessagesProj/src/main/assets/darkblue.attheme").read_text(encoding="utf8")
+        assert "chat_outBubble=#E8295358" in (root / "TMessagesProj/src/main/assets/darkblue.attheme").read_text(encoding="utf8")
         assert "FluidMotion.cameraFlipDurationMillis()" in camera
         assert "FluidCameraFps.choose(" in fps
         assert "CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES" in fps

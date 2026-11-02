@@ -58,7 +58,7 @@ class ConversationColorosRegression(unittest.TestCase):
         ):
             with self.subTest(key=key):
                 self.assertRegex(dark[key], r"^#[0-9a-fA-F]{8}$")
-        self.assertEqual(dark["chat_messagePanelBackground"], "#F2142537")
+        self.assertEqual(dark["chat_messagePanelBackground"], "#F0212C3A")
         self.assertEqual(dark["chat_messagePanelSend"], "#ff62F3DC")
 
     def test_no_new_frame_callbacks_or_network_changes(self):

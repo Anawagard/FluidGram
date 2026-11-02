@@ -44,9 +44,7 @@ public final class FluidLabsActivity extends Activity {
     private static final String[] MODE_NAMES = {
         "ColorOS · Автоматически", "Adaptive+ · Высокая плавность",
         "Максимум · совместимый режим", "Умный · экономия при 20%",
-        "Adaptive · прокрутка / покой",
-        "165 Гц · касание / прокрутка / покой",
-        "165 → 144 → Auto · эксперимент LTPO"
+        "Adaptive · прокрутка / покой"
     };
     private int dp(float n) { return (int) (n * getResources().getDisplayMetrics().density + .5f); }
     private GradientDrawable background(int first, int second, int radius, boolean border) {
@@ -266,9 +264,9 @@ public final class FluidLabsActivity extends Activity {
         root.addView(quickNavigation(), margins(22));
 
         section("ЭКРАН  /  ADAPTIVE REFRESH");
-        int mode = preferences.getInt("refresh_mode", 4);
+        int mode = FluidRefresh.selectedMode(this);
         card("Частота обновления", MODE_NAMES[Math.max(0, Math.min(mode, MODE_NAMES.length - 1))],
-            "При прокрутке запрашивает совместимый максимум, в покое — системный режим. При 20% заряда и энергосбережении повышенный запрос отключается.", () -> {
+            "Рекомендуется ColorOS · Автоматически: без запросов частоты от FluidGram. Дополнительные режимы ограничены 120 Гц, но могут мешать снижению LTPO в покое.", () -> {
                 new AlertDialog.Builder(this).setTitle("Частота обновления")
                     .setSingleChoiceItems(MODE_NAMES, mode, (dlg, which) -> {
                         preferences.edit().putInt("refresh_mode", which).apply();
@@ -277,35 +275,11 @@ public final class FluidLabsActivity extends Activity {
                         render();
                     }).setNegativeButton("Отмена", null).show();
             });
-        card("165 Гц · экспериментальный инструмент",
-             "Запрос при касании и прокрутке · сброс через 1,2 с",
-             "Включается последним вариантом в меню выше. Пробует штатный интерфейс opluscreenmode (если доступен), без root. После 1,2 с отпускает запрос. 165 Гц и 1 Гц в покое не гарантируются.",
-             () -> new AlertDialog.Builder(this)
-                     .setTitle("165 Гц · эксперимент")
-                     .setMessage("Приложение пробует запросить 165 Гц через интерфейс производителя. Это недокументированный API: после обновления ColorOS он может перестать работать. В покое запрос снимается, но 1 Гц не гарантируется. Защита батареи и температуры сохраняется.")
-                     .setPositiveButton("Включить", (dialog, which) -> {
-                         preferences.edit().putInt("refresh_mode", 5).apply();
-                         FluidRefresh.refresh(this);
-                         render();
-                     })
-                     .setNegativeButton("Отмена", null).show());
-        card("LTPO · тест перехода через 144 Гц",
-            "165 → 144 (250 мс) → ColorOS Auto",
-            "Отдельный экспериментальный профиль. При отсутствии касаний кратко запрашивает "
-                + "144 Гц и снимает запрос. Если ColorOS не вернёт 1 Гц, вернитесь к обычному режиму.",
-            () -> new AlertDialog.Builder(this).setTitle("Эксперимент LTPO")
-                .setMessage("Тестовый переход через 144 Гц может не улучшить расход батареи. "
-                    + "Системные настройки не изменяются, повторные запросы отменяются при касании.")
-                .setPositiveButton("Включить", (dialog, which) -> {
-                    preferences.edit().putInt("refresh_mode", 6).apply();
-                    FluidRefresh.refresh(this);
-                    render();
-                }).setNegativeButton("Отмена", null).show());
         Display d = getWindowManager().getDefaultDisplay();
         card("Экран устройства",
              Math.round(d.getRefreshRate()) + " Гц сейчас  /  до " +
                      Math.round(FluidRefresh.maxSupportedHz(this)) + " Гц доступно",
-             "Значения сообщает Android, не обещание стабильных 165 FPS.", null);
+             "Android сообщает режимы дисплея, а не реальную частоту LTPO. ColorOS Auto не гарантирует 1 Гц.", null);
         section("ОСОБЕННОСТИ  /  LIVE");
         toggle("Экран · частота HUD", "Показывает частоту дисплея по событиям Android, без постоянной отрисовки. Не измеряет FPS приложения.",
                "show_vsync", false);
@@ -450,7 +424,7 @@ public final class FluidLabsActivity extends Activity {
             });
         section("ДИАГНОСТИКА  /  COLOROS");
         card("Снимок LTPO через 3 и 6 секунд", "Сохранённое измерение без касаний",
-            "В режиме 165 Гц прокрутите экран, затем не касайтесь его 6 секунд. "
+            "Снимок относится к прежнему экспериментальному режиму. Для проверки ColorOS Auto используйте системный счётчик. "
             + "Снимки сохраняются до следующего завершённого измерения. "
             + "Частоты Android могут отличаться от счётчика LTPO ColorOS.",
             () -> new AlertDialog.Builder(this)

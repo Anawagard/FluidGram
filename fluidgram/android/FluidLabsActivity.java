@@ -233,6 +233,63 @@ public final class FluidLabsActivity extends Activity {
         p.bottomMargin = dp(bottom);
         return p;
     }
+    /**
+     * On-demand Android notification health snapshot. No network calls, polling,
+     * wake locks, background services, or persisted chat/notification metadata.
+     * FCM delivery latency cannot be measured from these OS settings.
+     */
+    private String notificationHealthReport() {
+        StringBuilder report = new StringBuilder();
+        android.app.NotificationManager manager =
+                (android.app.NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            boolean allowed = checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+                    == android.content.pm.PackageManager.PERMISSION_GRANTED;
+            report.append("Разрешение Android 13+: ")
+                    .append(allowed ? "выдано" : "НЕ выдано").append("\n");
+        }
+        if (manager == null) {
+            report.append("Служба уведомлений Android недоступна.\n");
+        } else {
+            if (android.os.Build.VERSION.SDK_INT >= 24) {
+                report.append("Уведомления приложения: ")
+                        .append(manager.areNotificationsEnabled() ? "разрешены" : "ОТКЛЮЧЕНЫ")
+                        .append("\n");
+            }
+            if (android.os.Build.VERSION.SDK_INT >= 26) {
+                java.util.List<android.app.NotificationChannel> channels =
+                        manager.getNotificationChannels();
+                int blocked = 0;
+                int quiet = 0;
+                for (android.app.NotificationChannel channel : channels) {
+                    int importance = channel.getImportance();
+                    if (importance == android.app.NotificationManager.IMPORTANCE_NONE) blocked++;
+                    else if (importance <= android.app.NotificationManager.IMPORTANCE_LOW) quiet++;
+                }
+                report.append("Каналов: ").append(channels.size())
+                        .append("; отключено: ").append(blocked)
+                        .append("; с низким приоритетом: ").append(quiet).append("\n");
+                report.append("Отключённые каналы могут быть намеренно заглушёнными чатами.\n");
+            }
+        }
+        android.os.PowerManager power =
+                (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
+        if (power != null) {
+            report.append("Оптимизация батареи: ")
+                    .append(power.isIgnoringBatteryOptimizations(getPackageName())
+                            ? "для приложения исключена" : "действует")
+                    .append("\n");
+            report.append("Энергосбережение Android: ")
+                    .append(power.isPowerSaveMode() ? "включено" : "выключено")
+                    .append("\n");
+        }
+        report.append("\nЭто проверка настроек, НЕ тест доставки push. ")
+                .append("Задержку FCM, соединения Telegram и ограничения автозапуска ColorOS ")
+                .append("Android не раскрывает через эти API. Сравните получение сообщения ")
+                .append("с обычным Telegram при заблокированном экране.");
+        return report.toString();
+    }
+
     private void render() {
         // Rebuilding glass surfaces must not throw the user back to the top.
         final ScrollView previousScroll = labsScroll;
@@ -381,6 +438,22 @@ public final class FluidLabsActivity extends Activity {
                     Toast.makeText(this, "Настройки энергосбережения недоступны", Toast.LENGTH_LONG).show();
                 }
             });
+        card("Проверка push · Android", "Диагностика по запросу",
+            "Проверяет разрешение Android 13+, каналы уведомлений и энергосбережение. "
+                + "Не отправляет тестовые сообщения и не измеряет задержку серверов Telegram.",
+            () -> new AlertDialog.Builder(this)
+                    .setTitle("FluidGram · диагностика уведомлений")
+                    .setMessage(notificationHealthReport())
+                    .setNeutralButton("Настройки уведомлений", (dialog, which) -> {
+                        Intent settings = new Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS);
+                        settings.putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, getPackageName());
+                        try { startActivity(settings); }
+                        catch (Exception ignored) {
+                            Toast.makeText(this, "Откройте настройки уведомлений FluidGram вручную", Toast.LENGTH_LONG).show();
+                        }
+                    })
+                    .setPositiveButton("Закрыть", null)
+                    .show());
         section("ЭНЕРГОЭФФЕКТИВНОСТЬ");
         android.os.PowerManager pm = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
         boolean saver = pm != null && pm.isPowerSaveMode();

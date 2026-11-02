@@ -312,6 +312,12 @@ public final class FluidLabsActivity extends Activity {
                + "до отправки в сеть. Не скрывает прочтение, онлайн, запись, загрузку "
                + "или действия в секретных чатах. Другие устройства могут показывать статус.",
                "ghost_hide_typing", false);
+        toggle("Не показывать «записывает голосовое…»",
+               "Блокирует только исходящий индикатор записи аудио через messages.setTyping "
+               + "с действием recordAudio. Не блокирует загрузку или отправку голосового, "
+               + "не скрывает видеозапись, онлайн, прочтение и действия других клиентов. "
+               + "Работу проверьте с другим аккаунтом.",
+               "ghost_hide_recording_audio", false);
         section("УВЕДОМЛЕНИЯ  /  TELEGRAM");
         android.app.NotificationManager notificationManager =
                 (android.app.NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);

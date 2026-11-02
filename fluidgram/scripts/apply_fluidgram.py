@@ -44,7 +44,19 @@ THEME_CHANGES = {
     "defaultColors[key_chat_outBubble] = 0xffefffde;": "defaultColors[key_chat_outBubble] = 0xffDDF7F4;",
     "defaultColors[key_chat_outBubbleSelected] = 0xffd9f7c5;": "defaultColors[key_chat_outBubbleSelected] = 0xffCAEEE9;",
     "defaultColors[key_chat_outMediaIcon] = 0xffefffde;": "defaultColors[key_chat_outMediaIcon] = 0xffDDF7F4;",
-    "defaultColors[key_chat_outMediaIconSelected] = 0xffe1f8cf;": "defaultColors[key_chat_outMediaIconSelected] = 0xffCAEEE9;"
+    "defaultColors[key_chat_outMediaIconSelected] = 0xffe1f8cf;": "defaultColors[key_chat_outMediaIconSelected] = 0xffCAEEE9;",
+    # ColorOS 17 Telegram conversation: passive frosted composer, legible
+    # message bubbles and coordinated reply/read indicators. No frame loops.
+    "defaultColors[key_chat_inBubble] = 0xffffffff;": "defaultColors[key_chat_inBubble] = 0xffF8FCFE;",
+    "defaultColors[key_chat_inBubbleSelected] = 0xffecf7fd;": "defaultColors[key_chat_inBubbleSelected] = 0xffE7F3F7;",
+    "defaultColors[key_chat_messagePanelBackground] = 0xffffffff;": "defaultColors[key_chat_messagePanelBackground] = 0xF2F8FCFE;",
+    "defaultColors[key_chat_messagePanelHint] = 0xff858a84;": "defaultColors[key_chat_messagePanelHint] = 0xff728A97;",
+    "defaultColors[key_chat_messagePanelIcons] = 0xff8e959b;": "defaultColors[key_chat_messagePanelIcons] = 0xff6C8794;",
+    "defaultColors[key_chat_messagePanelCursor] = 0xff54a1db;": "defaultColors[key_chat_messagePanelCursor] = 0xff16A6A2;",
+    "defaultColors[key_chat_outTimeText] = 0xff70b15c;": "defaultColors[key_chat_outTimeText] = 0xff398E88;",
+    "defaultColors[key_chat_outSentCheck] = 0xff5db050;": "defaultColors[key_chat_outSentCheck] = 0xff168C86;",
+    "defaultColors[key_chat_outReplyLine] = 0xff6eb969;": "defaultColors[key_chat_outReplyLine] = 0xff16A6A2;",
+    "defaultColors[key_chat_inReplyLine] = 0xff599fd8;": "defaultColors[key_chat_inReplyLine] = 0xff16A6A2;"
 }
 
 FLUIDGLASS_COLORS = {
@@ -91,7 +103,18 @@ FLUIDGLASS_COLORS = {
     "chat_messagePanelBackground": "#ff101e30",
     "chat_outTimeText": "#ffc3d6e2",
     "chat_outSentCheck": "#ff62f3dc",
-    "chat_wallpaper": "#ff0b1524"
+    "chat_wallpaper": "#ff0b1524",
+    # Semi-opaque chat composer with high-contrast static controls.
+    "chat_messagePanelBackground": "#F2142537",
+    "chat_messagePanelHint": "#ff9DB0BF",
+    "chat_messagePanelIcons": "#ff9DB7C5",
+    "chat_messagePanelCursor": "#ff62F3DC",
+    "chat_messagePanelSend": "#ff62F3DC",
+    "chat_inBubbleSelected": "#ff30465D",
+    "chat_outReplyLine": "#ff62F3DC",
+    "chat_inReplyLine": "#ff56C6CE",
+    "chat_outTimeText": "#ffB3D6D4",
+    "chat_outSentCheck": "#ff62F3DC"
 }
 
 

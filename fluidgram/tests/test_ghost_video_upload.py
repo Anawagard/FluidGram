@@ -35,7 +35,7 @@ class VideoUploadGhostTests(unittest.TestCase):
     def test_interception_precedes_native_dispatch_and_returns_callback(self):
         guard = self.patch.split("if (FluidPrivacy.shouldSuppressTyping(object)", 1)[1]
         guard = guard.split("if (BuildVars.LOGS_ENABLED)", 1)[0]
-        self.assertIn("|| FluidPrivacy.shouldSuppressVideoUploadIndicator(object)) {", guard)
+        self.assertIn("|| FluidPrivacy.shouldSuppressVideoUploadIndicator(object)", guard)
         self.assertIn("No native_sendRequest", guard)
         self.assertIn("return;", guard)
         self.assertIn("onComplete.run(new TLRPC.TL_boolTrue(), null)", guard)

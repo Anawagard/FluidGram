@@ -92,7 +92,7 @@ def verify():
         assert "FluidMotion.cameraFlipDurationMillis()" in camera
         assert "FluidCameraFps.choose(" in fps
         assert "CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES" in fps
-        assert "0xffDDF7F4" in palette
+        assert "0xC8DDF7F4" in palette
         assert f"APP_PACKAGE={PACKAGE}" in props
         assert "APP_VERSION_CODE=7248" in props
         vpn = (root / "TMessagesProj/src/main/java/org/telegram/ui/FluidVpnProfile.java").read_text(encoding="utf8")

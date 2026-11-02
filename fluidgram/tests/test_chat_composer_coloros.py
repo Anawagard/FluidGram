@@ -24,7 +24,7 @@ class ConversationColorosRegression(unittest.TestCase):
     def test_real_telegram_chat_composer_keys(self):
         light = palette("THEME_CHANGES")
         expected = {
-            "key_chat_inBubble": "0xffF8FCFE",
+            "key_chat_inBubble": "0xD0F8FCFE",
             "key_chat_messagePanelBackground": "0xF2F8FCFE",
             "key_chat_messagePanelHint": "0xff728A97",
             "key_chat_messagePanelIcons": "0xff6C8794",

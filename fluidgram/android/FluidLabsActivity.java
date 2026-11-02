@@ -483,6 +483,7 @@ public final class FluidLabsActivity extends Activity {
         chips.setPadding(dp(2), dp(2), dp(2), dp(2));
         String[][] destinations = {
             {"Экран", "ЭКРАН  /  ADAPTIVE REFRESH"},
+            {"Ghost Lab", "ПРИВАТНОСТЬ  /  GHOST LAB"},
             {"Уведомления", "УВЕДОМЛЕНИЯ  /  TELEGRAM"},
             {"Энергия", "ЭНЕРГОЭФФЕКТИВНОСТЬ"},
             {"VPN", "VPN · WIREGUARD"},

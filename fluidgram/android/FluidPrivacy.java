@@ -32,4 +32,13 @@ public final class FluidPrivacy {
         return typing.action instanceof TLRPC.TL_sendMessageRecordAudioAction
                 && enabled("ghost_hide_recording_audio");
     }
+
+    /** Ordinary video and round-video recording indicators, not uploads or calls. */
+    public static boolean shouldSuppressRecordingVideo(TLObject request) {
+        if (!(request instanceof TLRPC.TL_messages_setTyping)) return false;
+        TLRPC.TL_messages_setTyping typing = (TLRPC.TL_messages_setTyping) request;
+        return (typing.action instanceof TLRPC.TL_sendMessageRecordVideoAction
+                || typing.action instanceof TLRPC.TL_sendMessageRecordRoundAction)
+                && enabled("ghost_hide_recording_video");
+    }
 }

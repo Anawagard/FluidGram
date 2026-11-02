@@ -331,6 +331,13 @@ public final class FluidLabsActivity extends Activity {
                + "не скрывает видеозапись, онлайн, прочтение и действия других клиентов. "
                + "Работу проверьте с другим аккаунтом.",
                "ghost_hide_recording_audio", false);
+        toggle("Не показывать «записывает видео…»",
+               "Блокирует только исходящие индикаторы записи видео и видеокружков "
+               + "(messages.setTyping: recordVideo / recordRound). Не блокирует "
+               + "отправку видео, загрузки, звонки, прочтение или статус онлайн. "
+               + "Другие клиенты Telegram продолжат передавать свои индикаторы. "
+               + "Проверьте работу с другим аккаунтом.",
+               "ghost_hide_recording_video", false);
         section("УВЕДОМЛЕНИЯ  /  TELEGRAM");
         android.app.NotificationManager notificationManager =
                 (android.app.NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);

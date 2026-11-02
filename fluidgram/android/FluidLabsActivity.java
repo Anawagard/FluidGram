@@ -216,6 +216,9 @@ public final class FluidLabsActivity extends Activity {
         return p;
     }
     private void render() {
+        // Rebuilding glass surfaces must not throw the user back to the top.
+        final ScrollView previousScroll = labsScroll;
+        final int previousY = previousScroll == null ? 0 : previousScroll.getScrollY();
         neon = preferences.getBoolean("neon_labs", true);
         ScrollView scroll = new ScrollView(this);
         labsScroll = scroll;
@@ -236,6 +239,14 @@ public final class FluidLabsActivity extends Activity {
         }
         scene.addView(scroll, new FrameLayout.LayoutParams(-1, -1));
         setContentView(scene);
+        if (previousScroll != null) {
+            scroll.post(() -> {
+                // Ignore stale restoration after a second render or Activity finish.
+                if (labsScroll != scroll || isFinishing() || isDestroyed()) return;
+                int limit = Math.max(0, root.getHeight() - scroll.getHeight());
+                scroll.scrollTo(0, Math.min(previousY, limit));
+            });
+        }
         TextView back = text("‹   НАЗАД К НАСТРОЙКАМ", 13, ACCENT, true);
         back.setPadding(dp(8), dp(8), dp(8), dp(20));
         back.setOnClickListener(v -> finish());
@@ -302,6 +313,8 @@ public final class FluidLabsActivity extends Activity {
                "keep_screen_on", false);
         toggle("Непрозрачные карточки", "Контрастные поверхности без декоративного размытия и прозрачных слоёв в Labs. Можно отключить в любой момент.",
                "reduce_glass_transparency", false);
+        toggle("Спокойная навигация", "Мгновенные переходы между разделами Labs без анимации прокрутки. Также учитывает системное отключение анимаций.",
+               "reduce_motion_labs", false);
         toggle("Glass highlights", "Световые отражения и контрастная подсветка стеклянных элементов.",
                "neon_labs", true);
         toggle("Тактильное переключение", "Короткий виброотклик при смене камеры видеокружка.",
@@ -497,7 +510,14 @@ public final class FluidLabsActivity extends Activity {
         current.post(() -> {
             // Ignore a queued click if render() has already replaced the layout.
             if (current != labsScroll || anchor.getParent() != root) return;
-            current.smoothScrollTo(0, Math.max(0, anchor.getTop() - dp(12)));
+            int targetY = Math.max(0, anchor.getTop() - dp(12));
+            boolean animationsAllowed = android.os.Build.VERSION.SDK_INT < 26
+                    || android.animation.ValueAnimator.areAnimatorsEnabled();
+            if (preferences.getBoolean("reduce_motion_labs", false) || !animationsAllowed) {
+                current.scrollTo(0, targetY);
+            } else {
+                current.smoothScrollTo(0, targetY);
+            }
         });
     }
 

@@ -23,7 +23,7 @@ jobs:
         run: gradle -p questfreedom --no-daemon :app:assembleDebug :app:testDebugUnitTest
       - uses: actions/upload-artifact@v4
         with:
-          name: QuestFreedomLauncher-debug
+          name: QuestFreedomLauncher-v0.2-alpha
           path: questfreedom/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
       - name: Enable KVM acceleration
@@ -39,6 +39,16 @@ jobs:
           target: default
           profile: pixel_4
           script: |
+            set -eu
             adb install -r questfreedom/app/build/outputs/apk/debug/app-debug.apk
             adb shell am start -W -n org.questfreedom.launcher/org.questfreedom.ui.MainActivity
             adb shell pidof org.questfreedom.launcher
+            mkdir -p questfreedom/artifacts
+            adb shell screencap -p /sdcard/questfreedom.png
+            adb pull /sdcard/questfreedom.png questfreedom/artifacts/smoke.png
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: QuestFreedom-v0.2-emulator-screenshot
+          path: questfreedom/artifacts/smoke.png
+          if-no-files-found: ignore

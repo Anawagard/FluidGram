@@ -1,20 +1,29 @@
-# QuestFreedom OS 0.1 alpha
-Standalone **experimental AOSP port project**, not a flashable Meta Quest 3 firmware.
-Includes a regular Android launcher APK (Meta-free app dependencies) and an AOSP Cuttlefish ARM64 product overlay.
+# QuestFreedom OS 0.2 alpha — experimental Android launcher + AOSP product overlay
 
-*No actual Quest 3 hardware drivers, signed boot chain, stereo compositor, tracking, controllers or validated recovery are provided.*
-The UI filter hides selected Meta package families only within this launcher; it DOES NOT uninstall or disable installed Meta services on a real Quest.
+> **Not a custom Quest 3 ROM. Not a Meta/Horizon OS replacement. Do not flash any of these files.**
 
-## Tests and build
-Android Gradle Plugin 8.8.2, Gradle 8.10.2, Java 17, Android SDK 35:
-```bash
-cd questfreedom
-gradle :app:assembleDebug :app:testDebugUnitTest
-```
-CI additionally smoke-tests app install/launch in generic Android API 32 AVD. It does **not** simulate the Horizon OS bootloader or Quest 3 hardware. For Meta Spatial Simulator testing, manually install the resulting app APK with Meta VR Android Studio plugin.
+This branch isolates QuestFreedom under `questfreedom/` from the FluidGram application.
+APK launcher features:
+- High-contrast responsive layout for wider Android displays, with icon+name cards.
+- Package/name search, favorites (long-press an app to toggle), saved app visibility preference.
+- Android Settings, Wi-Fi, Bluetooth and Files shortcuts; uses only public intents.
+- Displays Android version and ABI; no special privileges, root, package deletion or Meta account modification.
+- Default filtering of Meta app families **in the launcher only**, optionally reversible. Meta components continue running on the device.
 
-## AOSP target (future)
-Copy `aosp/device/questfreedom/` to `device/questfreedom/` in official AOSP checkout.
-Copy compiled APK to `device/questfreedom/virtual/prebuilts/QuestFreedomLauncher.apk`.
-Then use `lunch questfreedom_cf_arm64_phone-userdebug` and `m`. This target is **untested** in a full AOSP source checkout.
-DO NOT FLASH TO QUEST 3.
+### CI: build and real generic Android emulator test
+GitHub Actions compiles the debug APK with Android Gradle Plugin 8.8.2, Java 17 and Gradle 8.10.2; runs pure-Java JUnit tests, installs APK to generic Android API 32 emulator, launches the activity and checks its process. A screenshot is archived.
+This emulator does **not** reproduce Horizon OS, the Quest 3 bootloader, its hardware or VR tracking.
+
+### Experimental virtual AOSP Cuttlefish ARM64 product
+`aosp/device/questfreedom/virtual/` contains a product overlay for an Android 15 AOSP source tree.
+1. Build the launcher APK with `gradle -p questfreedom :app:assembleDebug`.
+2. Copy the product overlay to `device/questfreedom/virtual` in an Android 15 AOSP checkout.
+3. Copy the built APK to `device/questfreedom/virtual/prebuilts/QuestFreedomLauncher.apk`.
+4. Use the AOSP build environment: `source build/envsetup.sh`, `lunch questfreedom_cf_arm64_phone-trunk_staging-userdebug`, `m`.
+These commands describe an *untested* full AOSP build and do not modify Quest hardware.
+
+### Missing hardware work before any Quest ROM exists
+Vendor board-support source and legally redistributable device blobs, verified bootloader path, Android HAL for stereo display, optics, controllers, tracking, audio and camera, recovery path, testing on real hardware. None is implemented or validated.
+
+### Security and privacy
+App preferences remain local to the launcher. No Internet permission, telemetry, root or disabling of services.

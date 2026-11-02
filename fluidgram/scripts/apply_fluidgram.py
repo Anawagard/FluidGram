@@ -134,9 +134,9 @@ FLUIDGLASS_COLORS = {
     "chat_attachPermissionText": "#ffB4C5D2",
     "chat_attachEmptyImage": "#ff6F8799",
     # ColorOS 17: subtle translucent surfaces for chat and folders, no runtime blur.
-    "chat_inBubble": "#E8273447",
-    "chat_outBubble": "#E8295358",
-    "chat_messagePanelBackground": "#F0212C3A",
+    "chat_inBubble": "#C8273447",
+    "chat_outBubble": "#C8295358",
+    "chat_messagePanelBackground": "#D9212C3A",
     "actionBarTabSelector": "#282CDAC7"
 }
 

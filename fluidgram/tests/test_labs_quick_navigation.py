@@ -24,7 +24,9 @@ class ColorOSQuickNavigationTests(unittest.TestCase):
             "sectionAnchors.clear();",
             "sectionAnchors.put(title, t);",
             "if (current != labsScroll || anchor.getParent() != root) return;",
-            "current.smoothScrollTo(0, Math.max(0, anchor.getTop() - dp(12)));",
+            "int targetY = Math.max(0, anchor.getTop() - dp(12));",
+            "current.smoothScrollTo(0, targetY);",
+            "current.scrollTo(0, targetY);",
         ):
             self.assertIn(token, LABS)
         self.assertNotIn("postDelayed(", LABS.split("private View quickNavigation()", 1)[1].split("private void card(", 1)[0])

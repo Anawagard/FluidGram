@@ -56,7 +56,16 @@ THEME_CHANGES = {
     "defaultColors[key_chat_outTimeText] = 0xff70b15c;": "defaultColors[key_chat_outTimeText] = 0xff398E88;",
     "defaultColors[key_chat_outSentCheck] = 0xff5db050;": "defaultColors[key_chat_outSentCheck] = 0xff168C86;",
     "defaultColors[key_chat_outReplyLine] = 0xff6eb969;": "defaultColors[key_chat_outReplyLine] = 0xff16A6A2;",
-    "defaultColors[key_chat_inReplyLine] = 0xff599fd8;": "defaultColors[key_chat_inReplyLine] = 0xff16A6A2;"
+    "defaultColors[key_chat_inReplyLine] = 0xff599fd8;": "defaultColors[key_chat_inReplyLine] = 0xff16A6A2;",
+    # ColorOS 17 attachment sheet: real Telegram AttachAlert palette. Keep
+    # icons legible on solid action tiles; only the photo overlay is translucent.
+    "defaultColors[key_chat_attachActiveTab] = 0xff33a7f5;": "defaultColors[key_chat_attachActiveTab] = 0xff087C85;",
+    "defaultColors[key_chat_attachUnactiveTab] = 0xff92999e;": "defaultColors[key_chat_attachUnactiveTab] = 0xff6C8794;",
+    "defaultColors[key_chat_attachGalleryBackground] = 0xff459df5;": "defaultColors[key_chat_attachGalleryBackground] = 0xff087C85;",
+    "defaultColors[key_chat_attachAudioBackground] = 0xffeb6060;": "defaultColors[key_chat_attachAudioBackground] = 0xffA84F60;",
+    "defaultColors[key_chat_attachPhotoBackground] = 0x0c000000;": "defaultColors[key_chat_attachPhotoBackground] = 0x1016A6A2;",
+    "defaultColors[key_chat_attachPermissionText] = 0xff6f777a;": "defaultColors[key_chat_attachPermissionText] = 0xff657D89;",
+    "defaultColors[key_chat_attachEmptyImage] = 0xffcccccc;": "defaultColors[key_chat_attachEmptyImage] = 0xffC4D4DB;"
 }
 
 FLUIDGLASS_COLORS = {
@@ -114,7 +123,16 @@ FLUIDGLASS_COLORS = {
     "chat_outReplyLine": "#ff62F3DC",
     "chat_inReplyLine": "#ff56C6CE",
     "chat_outTimeText": "#ffB3D6D4",
-    "chat_outSentCheck": "#ff62F3DC"
+    "chat_outSentCheck": "#ff62F3DC",
+    # Dark Blue preset: same attachment-sheet surfaces as light mode.
+    "chat_attachActiveTab": "#ff62F3DC",
+    "chat_attachUnactiveTab": "#ffA4B8C7",
+    "chat_attachGalleryBackground": "#ff1F807D",
+    "chat_attachAudioBackground": "#ffA85F71",
+    "chat_attachPhotoBackground": "#1816A6A2",
+    "chat_attachCheckBoxBackground": "#ff2CCFC0",
+    "chat_attachPermissionText": "#ffB4C5D2",
+    "chat_attachEmptyImage": "#ff6F8799"
 }
 
 

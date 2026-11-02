@@ -6,7 +6,7 @@ import org.telegram.messenger.ApplicationLoader;
 
 /**
  * Applies only to ordinary messages.setTyping with explicitly selected actions.
- * Does not intercept encrypted chats, uploads, presence, or read receipts.
+ * Does not intercept encrypted chats, actual file uploads, presence, or read receipts.
  * Disabled by default and never mutates credentials or incoming push delivery.
  */
 public final class FluidPrivacy {
@@ -31,6 +31,14 @@ public final class FluidPrivacy {
         TLRPC.TL_messages_setTyping typing = (TLRPC.TL_messages_setTyping) request;
         return typing.action instanceof TLRPC.TL_sendMessageRecordAudioAction
                 && enabled("ghost_hide_recording_audio");
+    }
+
+    /** Optional photo-upload activity only, never the media upload or message send. */
+    public static boolean shouldSuppressPhotoUploadIndicator(TLObject request) {
+        if (!(request instanceof TLRPC.TL_messages_setTyping)) return false;
+        TLRPC.TL_messages_setTyping typing = (TLRPC.TL_messages_setTyping) request;
+        return typing.action instanceof TLRPC.TL_sendMessageUploadPhotoAction
+                && enabled("ghost_hide_photo_upload_indicator");
     }
 
     /** Ordinary video and round-video recording indicators, not uploads or calls. */

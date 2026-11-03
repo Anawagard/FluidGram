@@ -38,7 +38,7 @@ class AttachmentSheetColorosTest(unittest.TestCase):
             "key_chat_attachGalleryBackground": "0xff087C85",
             "key_chat_attachAudioBackground": "0xffA84F60",
             "key_chat_attachPhotoBackground": "0x1016A6A2",
-            "key_chat_attachPermissionText": "0xff657D89",
+            "key_chat_attachPermissionText": "0xff486675",
             "key_chat_attachEmptyImage": "0xffC4D4DB",
         }
         for key, color in expected.items():
@@ -58,6 +58,14 @@ class AttachmentSheetColorosTest(unittest.TestCase):
                      if "key_chat_attachPhotoBackground" in before)
         argb = int(photo.split("0x", 1)[1].split(";", 1)[0], 16)
         self.assertLessEqual(argb >> 24, 0x20)
+
+    def test_light_attachment_permission_copy_has_accessible_contrast(self):
+        changes = palette("THEME_CHANGES")
+        value = next(after for before, after in changes.items()
+                     if before.startswith("defaultColors[key_chat_attachPermissionText] ="))
+        color = int(value.split("0x", 1)[1].split(";", 1)[0], 16)
+        self.assertEqual(color >> 24, 0xFF)
+        self.assertGreaterEqual(rgb_contrast_with_white(color), 7.0)
 
     def test_dark_blue_attachment_palette_is_complete(self):
         dark = palette("FLUIDGLASS_COLORS")

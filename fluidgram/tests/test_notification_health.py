@@ -11,7 +11,8 @@ LABS = (Path(__file__).resolve().parents[1] / "android" / "FluidLabsActivity.jav
 class NotificationHealthTests(unittest.TestCase):
     def test_exposed_in_labs_and_user_initiated(self):
         self.assertIn('card("Проверка push · Android", "Диагностика по запросу"', LABS)
-        self.assertIn(".setMessage(notificationHealthReport())", LABS)
+        self.assertIn("final String reportSnapshot = notificationHealthReport();", LABS)
+        self.assertIn(".setMessage(reportSnapshot)", LABS)
         self.assertIn("ACTION_APP_NOTIFICATION_SETTINGS", LABS)
 
     def test_report_can_be_copied_only_on_user_action(self):

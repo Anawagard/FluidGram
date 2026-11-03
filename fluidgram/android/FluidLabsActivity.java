@@ -282,13 +282,21 @@ public final class FluidLabsActivity extends Activity {
         android.os.PowerManager power =
                 (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
         if (power != null) {
+            boolean optimized = !power.isIgnoringBatteryOptimizations(getPackageName());
+            boolean powerSave = power.isPowerSaveMode();
             report.append("Оптимизация батареи: ")
-                    .append(power.isIgnoringBatteryOptimizations(getPackageName())
-                            ? "для приложения исключена" : "действует")
+                    .append(optimized ? "действует" : "для приложения исключена")
                     .append("\n");
             report.append("Энергосбережение Android: ")
-                    .append(power.isPowerSaveMode() ? "включено" : "выключено")
+                    .append(powerSave ? "включено" : "выключено")
                     .append("\n");
+            // Advice is conditional and read-only; never silently change OS settings.
+            if (optimized || powerSave) {
+                report.append("Для проверки задержек push: ");
+                if (powerSave) report.append("временно отключите общее энергосбережение; ");
+                if (optimized) report.append("проверьте разрешение фоновой работы FluidGram в ColorOS; ");
+                report.append("затем сравните уведомления при заблокированном экране.\n");
+            }
         }
         // App Standby is independent of battery optimization. Read only on demand.
         if (android.os.Build.VERSION.SDK_INT >= 28) {

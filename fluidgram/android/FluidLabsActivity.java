@@ -521,9 +521,12 @@ public final class FluidLabsActivity extends Activity {
         card("Проверка push · Android", "Диагностика по запросу",
             "Проверяет разрешение Android 13+, каналы уведомлений и энергосбережение. "
                 + "Не отправляет тестовые сообщения и не измеряет задержку серверов Telegram.",
-            () -> new AlertDialog.Builder(this)
+            () -> {
+                // Copy exactly the report displayed in this dialog.
+                final String reportSnapshot = notificationHealthReport();
+                new AlertDialog.Builder(this)
                     .setTitle("FluidGram · диагностика уведомлений")
-                    .setMessage(notificationHealthReport())
+                    .setMessage(reportSnapshot)
                     .setNeutralButton("Настройки уведомлений", (dialog, which) -> {
                         Intent settings = new Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS);
                         settings.putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, getPackageName());
@@ -540,11 +543,12 @@ public final class FluidLabsActivity extends Activity {
                             return;
                         }
                         clipboard.setPrimaryClip(ClipData.newPlainText(
-                                "FluidGram notification diagnostics", notificationHealthReport()));
+                                "FluidGram notification diagnostics", reportSnapshot));
                         Toast.makeText(this, "Отчёт уведомлений скопирован", Toast.LENGTH_SHORT).show();
                     })
                     .setPositiveButton("Закрыть", null)
-                    .show());
+                    .show();
+            });
         section("ЭНЕРГОЭФФЕКТИВНОСТЬ");
         android.os.PowerManager pm = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
         boolean saver = pm != null && pm.isPowerSaveMode();

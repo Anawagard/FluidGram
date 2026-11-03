@@ -65,7 +65,7 @@ THEME_CHANGES = {
     "defaultColors[key_chat_attachGalleryBackground] = 0xff459df5;": "defaultColors[key_chat_attachGalleryBackground] = 0xff087C85;",
     "defaultColors[key_chat_attachAudioBackground] = 0xffeb6060;": "defaultColors[key_chat_attachAudioBackground] = 0xffA84F60;",
     "defaultColors[key_chat_attachPhotoBackground] = 0x0c000000;": "defaultColors[key_chat_attachPhotoBackground] = 0x1016A6A2;",
-    "defaultColors[key_chat_attachPermissionText] = 0xff6f777a;": "defaultColors[key_chat_attachPermissionText] = 0xff657D89;",
+    "defaultColors[key_chat_attachPermissionText] = 0xff6f777a;": "defaultColors[key_chat_attachPermissionText] = 0xff486675;",
     "defaultColors[key_chat_attachEmptyImage] = 0xffcccccc;": "defaultColors[key_chat_attachEmptyImage] = 0xffC4D4DB;"
 }
 

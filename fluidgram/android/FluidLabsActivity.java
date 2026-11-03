@@ -476,6 +476,17 @@ public final class FluidLabsActivity extends Activity {
                             Toast.makeText(this, "Откройте настройки уведомлений FluidGram вручную", Toast.LENGTH_LONG).show();
                         }
                     })
+                    .setNegativeButton("Скопировать отчёт", (dialog, which) -> {
+                        ClipboardManager clipboard = (ClipboardManager)
+                                getSystemService(Context.CLIPBOARD_SERVICE);
+                        if (clipboard == null) {
+                            Toast.makeText(this, "Буфер обмена недоступен", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        clipboard.setPrimaryClip(ClipData.newPlainText(
+                                "FluidGram notification diagnostics", notificationHealthReport()));
+                        Toast.makeText(this, "Отчёт уведомлений скопирован", Toast.LENGTH_SHORT).show();
+                    })
                     .setPositiveButton("Закрыть", null)
                     .show());
         section("ЭНЕРГОЭФФЕКТИВНОСТЬ");

@@ -290,6 +290,30 @@ public final class FluidLabsActivity extends Activity {
                     .append(power.isPowerSaveMode() ? "включено" : "выключено")
                     .append("\n");
         }
+        // App Standby is independent of battery optimization. Read only on demand.
+        if (android.os.Build.VERSION.SDK_INT >= 28) {
+            android.app.usage.UsageStatsManager usage =
+                    (android.app.usage.UsageStatsManager) getSystemService(Context.USAGE_STATS_SERVICE);
+            if (usage != null) {
+                try {
+                    int bucket = usage.getAppStandbyBucket();
+                    String standby = bucket <= android.app.usage.UsageStatsManager.STANDBY_BUCKET_ACTIVE
+                            ? "активный"
+                            : bucket <= android.app.usage.UsageStatsManager.STANDBY_BUCKET_WORKING_SET
+                            ? "часто используемый"
+                            : bucket <= android.app.usage.UsageStatsManager.STANDBY_BUCKET_FREQUENT
+                            ? "периодический"
+                            : bucket <= android.app.usage.UsageStatsManager.STANDBY_BUCKET_RARE
+                            ? "редкий"
+                            : bucket <= android.app.usage.UsageStatsManager.STANDBY_BUCKET_RESTRICTED
+                            ? "ограниченный" : "неизвестный";
+                    report.append("Режим ожидания приложения: ").append(standby)
+                            .append(" (").append(bucket).append(")\n");
+                } catch (SecurityException ignored) {
+                    report.append("Режим ожидания приложения: недоступен\n");
+                }
+            }
+        }
         report.append("\nЭто проверка настроек, НЕ тест доставки push. ")
                 .append("Задержку FCM, соединения Telegram и ограничения автозапуска ColorOS ")
                 .append("Android не раскрывает через эти API. Сравните получение сообщения ")

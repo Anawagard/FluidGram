@@ -103,7 +103,7 @@ FLUIDGLASS_COLORS = {
     "chats_actionPressedBackground": "#ff1c8f87",
     "chats_date_bold": "#ffa3b8c8",
     "chats_messageArchived": "#ff8da3b7",
-    "dialogSearchHint": "#ff9bb0c1",
+    "dialogSearchHint": "#ffC0D4E1",
     "chat_inBubble": "#ff1b2c40",
     "chat_outBubble": "#ff1c4951",
     "chat_inBubbleSelected": "#ff2b4059",

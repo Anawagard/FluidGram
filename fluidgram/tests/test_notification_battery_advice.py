@@ -6,6 +6,15 @@ SOURCE = (Path(__file__).resolve().parents[1] / "android" / "FluidLabsActivity.j
 
 
 class NotificationBatteryAdviceTest(unittest.TestCase):
+    def test_copied_push_report_matches_displayed_snapshot(self):
+        start = SOURCE.index('card("Проверка push · Android"')
+        end = SOURCE.index('section("ЭНЕРГОЭФФЕКТИВНОСТЬ")', start)
+        dialog = SOURCE[start:end]
+        self.assertEqual(dialog.count("notificationHealthReport()"), 1)
+        self.assertIn("final String reportSnapshot = notificationHealthReport();", dialog)
+        self.assertIn(".setMessage(reportSnapshot)", dialog)
+        self.assertIn('"FluidGram notification diagnostics", reportSnapshot', dialog)
+
     def test_conditional_battery_advice(self):
         start = SOURCE.index("private String notificationHealthReport()")
         end = SOURCE.index("// App Standby is independent", start)

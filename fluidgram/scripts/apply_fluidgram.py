@@ -50,7 +50,7 @@ THEME_CHANGES = {
     # message bubbles and coordinated reply/read indicators. No frame loops.
     "defaultColors[key_chat_inBubble] = 0xffffffff;": "defaultColors[key_chat_inBubble] = 0xD0F8FCFE;",
     "defaultColors[key_chat_inBubbleSelected] = 0xffecf7fd;": "defaultColors[key_chat_inBubbleSelected] = 0xE4E7F3F7;",
-    "defaultColors[key_chat_messagePanelBackground] = 0xffffffff;": "defaultColors[key_chat_messagePanelBackground] = 0xF2F8FCFE;",
+    "defaultColors[key_chat_messagePanelBackground] = 0xffffffff;": "defaultColors[key_chat_messagePanelBackground] = 0xB8F8FCFE;",
     "defaultColors[key_chat_messagePanelHint] = 0xff858a84;": "defaultColors[key_chat_messagePanelHint] = 0xff728A97;",
     "defaultColors[key_chat_messagePanelIcons] = 0xff8e959b;": "defaultColors[key_chat_messagePanelIcons] = 0xff6C8794;",
     "defaultColors[key_chat_messagePanelCursor] = 0xff54a1db;": "defaultColors[key_chat_messagePanelCursor] = 0xff16A6A2;",

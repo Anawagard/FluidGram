@@ -137,7 +137,7 @@ FLUIDGLASS_COLORS = {
     # ColorOS 17: subtle translucent surfaces for chat and folders, no runtime blur.
     "chat_inBubble": "#FF273447",
     "chat_outBubble": "#FF295358",
-    "chat_messagePanelBackground": "#6D212C3A",
+    # ColorOS 17: keep the composer frosted but readable over bright wallpapers.\n    "chat_messagePanelBackground": "#C0212C3A",
     "actionBarTabSelector": "#282CDAC7"
 }
 

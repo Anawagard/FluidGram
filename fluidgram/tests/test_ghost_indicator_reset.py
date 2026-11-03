@@ -19,7 +19,7 @@ KEYS = (
 
 class GhostIndicatorResetTests(unittest.TestCase):
     def test_all_indicators_are_in_reset_list(self):
-        match = re.search(r"GHOST_INDICATOR_KEYS = \\{(.*?)\\};", SOURCE, re.S)
+        match = re.search(r"GHOST_INDICATOR_KEYS = \{(.*?)\};", SOURCE, re.S)
         self.assertIsNotNone(match)
         self.assertEqual(set(re.findall(r'"(ghost_[^"]+)"', match.group(1))), set(KEYS))
 

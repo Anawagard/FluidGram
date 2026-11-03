@@ -66,8 +66,10 @@ class ConversationColorosRegression(unittest.TestCase):
         value = next(v for k, v in light.items()
                      if k.startswith("defaultColors[key_chat_messagePanelBackground] ="))
         argb = int(value.split("0x", 1)[1].split(";", 1)[0], 16)
-        self.assertGreaterEqual(argb >> 24, 0xE0)
-        self.assertLess(argb >> 24, 0xFF)
+        # ColorOS 17 light composer: 72% opacity, with readable controls.
+        self.assertEqual(argb >> 24, 0xB8)
+        self.assertGreaterEqual(argb >> 24, 0xB0)
+        self.assertLess(argb >> 24, 0xD0)
 
     def test_dark_blue_chat_composer_has_matching_controls(self):
         dark = palette("FLUIDGLASS_COLORS")

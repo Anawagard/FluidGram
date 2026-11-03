@@ -14,6 +14,17 @@ class NotificationHealthTests(unittest.TestCase):
         self.assertIn(".setMessage(notificationHealthReport())", LABS)
         self.assertIn("ACTION_APP_NOTIFICATION_SETTINGS", LABS)
 
+    def test_report_can_be_copied_only_on_user_action(self):
+        dialog = LABS.split('card("Проверка push · Android"', 1)[1].split(
+            'section("ЭНЕРГОЭФФЕКТИВНОСТЬ")', 1)[0]
+        self.assertIn('.setNegativeButton("Скопировать отчёт"', dialog)
+        self.assertIn("ClipboardManager", dialog)
+        self.assertIn("ClipData.newPlainText(", dialog)
+        self.assertIn("notificationHealthReport()", dialog)
+        self.assertIn("if (clipboard == null)", dialog)
+        self.assertIn('setPositiveButton("Закрыть"', dialog)
+        self.assertNotIn("sendRequest", dialog)
+
     def test_checks_real_android_controls_with_api_guards(self):
         report = LABS.split("private String notificationHealthReport() {", 1)[1].split("\n    private void render()", 1)[0]
         self.assertIn("android.os.Build.VERSION.SDK_INT >= 33", report)

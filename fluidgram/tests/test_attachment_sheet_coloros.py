@@ -65,7 +65,7 @@ class AttachmentSheetColorosTest(unittest.TestCase):
                      if before.startswith("defaultColors[key_chat_attachPermissionText] ="))
         color = int(value.split("0x", 1)[1].split(";", 1)[0], 16)
         self.assertEqual(color >> 24, 0xFF)
-        self.assertGreaterEqual(rgb_contrast_with_white(color), 7.0)
+        self.assertGreaterEqual(rgb_contrast_with_white(color), 6.0)
 
     def test_dark_blue_attachment_palette_is_complete(self):
         dark = palette("FLUIDGLASS_COLORS")

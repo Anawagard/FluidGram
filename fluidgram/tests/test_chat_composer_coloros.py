@@ -45,8 +45,8 @@ class ConversationColorosRegression(unittest.TestCase):
         expected = {
             "key_chat_inBubble": 0xffF8FCFE,
             "key_chat_outBubble": 0xffDDF7F4,
-            "key_chat_inBubbleSelected": 0xE4E7F3F7,
-            "key_chat_outBubbleSelected": 0xE4CAEEE9,
+            "key_chat_inBubbleSelected": 0xffE7F3F7,
+            "key_chat_outBubbleSelected": 0xffCAEEE9,
         }
         for key, color in expected.items():
             with self.subTest(key=key):
@@ -55,6 +55,8 @@ class ConversationColorosRegression(unittest.TestCase):
                 self.assertEqual(value, color)
         self.assertEqual(expected["key_chat_inBubble"] >> 24, 0xFF)
         self.assertEqual(expected["key_chat_outBubble"] >> 24, 0xFF)
+        self.assertEqual(expected["key_chat_inBubbleSelected"] >> 24, 0xFF)
+        self.assertEqual(expected["key_chat_outBubbleSelected"] >> 24, 0xFF)
 
     def test_dark_chat_bubbles_are_opaque(self):
         dark = palette("FLUIDGLASS_COLORS")

@@ -420,6 +420,12 @@ public final class FluidLabsActivity extends Activity {
                + "не блокируется. Статус онлайн, прочтение, секретные чаты и "
                + "активность других устройств не скрываются. Проверьте с другим аккаунтом.",
                "ghost_hide_document_upload_indicator", false);
+        toggle("Не показывать «выбирает стикер…»",
+               "Отдельно блокирует только исходящий индикатор выбора стикера "
+               + "(messages.setTyping: chooseSticker). Сами стикеры и сообщения "
+               + "отправляются как обычно. Не скрывает онлайн, прочтение, действия "
+               + "других устройств и секретных чатов. Проверьте с другим аккаунтом.",
+               "ghost_hide_choosing_sticker", false);
         section("УВЕДОМЛЕНИЯ  /  TELEGRAM");
         android.app.NotificationManager notificationManager =
                 (android.app.NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);

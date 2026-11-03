@@ -84,4 +84,17 @@ public final class FluidPrivacy {
                 && enabled("ghost_hide_audio_upload_indicator");
     }
 
+    /**
+     * Opt-in suppression of the "choosing a sticker" activity indicator.
+     * Only ordinary messages.setTyping(chooseSticker) is intercepted.
+     * Sticker messages, media transfers, secret chats, read receipts,
+     * online presence and actions from other clients are not modified.
+     */
+    public static boolean shouldSuppressChoosingSticker(TLObject request) {
+        if (!(request instanceof TLRPC.TL_messages_setTyping)) return false;
+        TLRPC.TL_messages_setTyping typing = (TLRPC.TL_messages_setTyping) request;
+        return typing.action instanceof TLRPC.TL_sendMessageChooseStickerAction
+                && enabled("ghost_hide_choosing_sticker");
+    }
+
 }

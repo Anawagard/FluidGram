@@ -56,6 +56,9 @@ def verify():
         privacy = (root / "TMessagesProj/src/main/java/org/telegram/tgnet/FluidPrivacy.java").read_text(encoding="utf8")
         assert "FluidPrivacy.shouldSuppressTyping(object)" in connections
         assert "FluidPrivacy.shouldSuppressVideoUploadIndicator(object)" in connections
+        assert "FluidPrivacy.shouldSuppressChoosingSticker(object)" in connections
+        assert "TL_sendMessageChooseStickerAction" in privacy
+        assert '"ghost_hide_choosing_sticker", false' in labs
         assert "TL_sendMessageUploadVideoAction" in privacy
         assert "TL_sendMessageUploadRoundAction" in privacy
         assert "No native_sendRequest" in connections

@@ -517,6 +517,7 @@ def apply(root, api_id, api_hash):
         if (FluidPrivacy.shouldSuppressTyping(object)
                 || FluidPrivacy.shouldSuppressRecordingAudio(object)
                 || FluidPrivacy.shouldSuppressRecordingVideo(object)
+                || FluidPrivacy.shouldSuppressRecordingRound(object)
                 || FluidPrivacy.shouldSuppressPhotoUploadIndicator(object)
                 || FluidPrivacy.shouldSuppressVideoUploadIndicator(object)
                 || FluidPrivacy.shouldSuppressAudioUploadIndicator(object)

@@ -10,7 +10,7 @@ def test_video_recording_ghost_filter_is_opt_in_and_action_scoped():
     method = privacy.split("public static boolean shouldSuppressRecordingVideo(", 1)[1]
     assert "instanceof TLRPC.TL_messages_setTyping" in method
     assert "instanceof TLRPC.TL_sendMessageRecordVideoAction" in method
-    assert "instanceof TLRPC.TL_sendMessageRecordRoundAction" in method
+    assert "instanceof TLRPC.TL_sendMessageRecordRoundAction" not in method.split("\\n    }", 1)[0]
     assert 'enabled("ghost_hide_recording_video")' in method
     assert 'getBoolean(key, false)' in privacy
     assert "TL_sendMessageUploadVideoAction" not in method
@@ -37,3 +37,13 @@ def test_video_recording_switch_is_independent_and_off_by_default():
     assert 'enabled("ghost_hide_recording_video")' in privacy
     assert 'Не блокирует ' in labs
     assert 'Другие клиенты Telegram' in labs
+
+def test_round_video_recording_has_separate_network_filter_and_switch():
+    method = privacy.split("public static boolean shouldSuppressRecordingRound(", 1)[1].split("\\n    }", 1)[0]
+    assert "instanceof TLRPC.TL_messages_setTyping" in method
+    assert "instanceof TLRPC.TL_sendMessageRecordRoundAction" in method
+    assert 'enabled("ghost_hide_recording_round")' in method
+    assert "TL_sendMessageUploadRoundAction" not in method
+    assert "|| FluidPrivacy.shouldSuppressRecordingRound(object)" in patch
+    assert '"ghost_hide_recording_round", false' in labs
+    assert 'Не показывать «записывает видеокружок…»' in labs

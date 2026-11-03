@@ -45,8 +45,7 @@ public final class FluidPrivacy {
     public static boolean shouldSuppressRecordingVideo(TLObject request) {
         if (!(request instanceof TLRPC.TL_messages_setTyping)) return false;
         TLRPC.TL_messages_setTyping typing = (TLRPC.TL_messages_setTyping) request;
-        return (typing.action instanceof TLRPC.TL_sendMessageRecordVideoAction
-                || typing.action instanceof TLRPC.TL_sendMessageRecordRoundAction)
+        return typing.action instanceof TLRPC.TL_sendMessageRecordVideoAction
                 && enabled("ghost_hide_recording_video");
     }
     /**
@@ -97,4 +96,11 @@ public final class FluidPrivacy {
                 && enabled("ghost_hide_choosing_sticker");
     }
 
+    /** Separate opt-in round-video recording indicator filter; media delivery unaffected. */
+    public static boolean shouldSuppressRecordingRound(TLObject request) {
+        if (!(request instanceof TLRPC.TL_messages_setTyping)) return false;
+        TLRPC.TL_messages_setTyping typing = (TLRPC.TL_messages_setTyping) request;
+        return typing.action instanceof TLRPC.TL_sendMessageRecordRoundAction
+                && enabled("ghost_hide_recording_round");
+    }
 }

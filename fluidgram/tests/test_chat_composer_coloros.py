@@ -24,7 +24,7 @@ class ConversationColorosRegression(unittest.TestCase):
     def test_real_telegram_chat_composer_keys(self):
         light = palette("THEME_CHANGES")
         expected = {
-            "key_chat_inBubble": "0xD0F8FCFE",
+            "key_chat_inBubble": "0xffF8FCFE",
             "key_chat_messagePanelBackground": "0xB8F8FCFE",
             "key_chat_messagePanelHint": "0xff728A97",
             "key_chat_messagePanelIcons": "0xff6C8794",
@@ -39,12 +39,12 @@ class ConversationColorosRegression(unittest.TestCase):
                 self.assertEqual(len(values), 1)
                 self.assertIn(color + ";", values[0])
 
-    def test_light_chat_bubbles_are_frosted_but_selected_remain_readable(self):
-        # Actual Telegram chat bubble theme keys, not a Labs-only preview.
+    def test_light_chat_bubbles_are_opaque_and_readable(self):
+        # Chat wallpapers must not wash out message text.
         light = palette("THEME_CHANGES")
         expected = {
-            "key_chat_inBubble": 0xD0F8FCFE,
-            "key_chat_outBubble": 0xC8DDF7F4,
+            "key_chat_inBubble": 0xffF8FCFE,
+            "key_chat_outBubble": 0xffDDF7F4,
             "key_chat_inBubbleSelected": 0xE4E7F3F7,
             "key_chat_outBubbleSelected": 0xE4CAEEE9,
         }
@@ -53,13 +53,13 @@ class ConversationColorosRegression(unittest.TestCase):
                 old = next(k for k in light if k.startswith("defaultColors[" + key + "] ="))
                 value = int(light[old].split("0x", 1)[1].split(";", 1)[0], 16)
                 self.assertEqual(value, color)
-                self.assertGreaterEqual(value >> 24, 0xC0)
-                self.assertLess(value >> 24, 0xFF)
-        for side in ("in", "out"):
-            self.assertGreater(
-                expected["key_chat_" + side + "BubbleSelected"] >> 24,
-                expected["key_chat_" + side + "Bubble"] >> 24,
-            )
+        self.assertEqual(expected["key_chat_inBubble"] >> 24, 0xFF)
+        self.assertEqual(expected["key_chat_outBubble"] >> 24, 0xFF)
+
+    def test_dark_chat_bubbles_are_opaque(self):
+        dark = palette("FLUIDGLASS_COLORS")
+        self.assertEqual(dark["chat_inBubble"], "#FF273447")
+        self.assertEqual(dark["chat_outBubble"], "#FF295358")
 
     def test_light_composer_is_subtly_translucent_not_invisible(self):
         light = palette("THEME_CHANGES")

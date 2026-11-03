@@ -42,6 +42,13 @@ public final class FluidLabsActivity extends Activity {
     private int cachedBatteryPercent = -1;
     private static final int BG = 0xFF050A11;
     private static final int ACCENT = 0xFFE2F9FF;
+    private static final String[] GHOST_INDICATOR_KEYS = {
+        "ghost_hide_typing", "ghost_hide_recording_audio",
+        "ghost_hide_audio_upload_indicator", "ghost_hide_recording_video",
+        "ghost_hide_recording_round", "ghost_hide_photo_upload_indicator",
+        "ghost_hide_video_upload_indicator", "ghost_hide_document_upload_indicator",
+        "ghost_hide_choosing_sticker"
+    };
     private static final String[] MODE_NAMES = {
         "ColorOS · Автоматически", "Adaptive+ · Высокая плавность",
         "Максимум · совместимый режим", "Умный · экономия при 20%",
@@ -432,6 +439,23 @@ public final class FluidLabsActivity extends Activity {
                + "отправляются как обычно. Не скрывает онлайн, прочтение, действия "
                + "других устройств и секретных чатов. Проверьте с другим аккаунтом.",
                "ghost_hide_choosing_sticker", false);
+        card("Сброс индикаторов Ghost", "Вернуть стандартное поведение Telegram",
+            "Отключает только девять отдельных ограничений исходящих индикаторов "
+                + "набора, записи и загрузки. Сообщения, уведомления и настройки "
+                + "приватности Telegram не изменяются.",
+            () -> new AlertDialog.Builder(this)
+                    .setTitle("Сбросить ограничения индикаторов?")
+                    .setMessage("После подтверждения FluidGram снова будет передавать "
+                            + "поддерживаемые индикаторы действий Telegram обычным способом. "
+                            + "Настройки других устройств не изменятся.")
+                    .setPositiveButton("Сбросить", (dialog, which) -> {
+                        SharedPreferences.Editor editor = preferences.edit();
+                        for (String key : GHOST_INDICATOR_KEYS) editor.putBoolean(key, false);
+                        editor.apply();
+                        Toast.makeText(this, "Ограничения индикаторов отключены", Toast.LENGTH_SHORT).show();
+                        render();
+                    })
+                    .setNegativeButton("Отмена", null).show());
         section("УВЕДОМЛЕНИЯ  /  TELEGRAM");
         android.app.NotificationManager notificationManager =
                 (android.app.NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);

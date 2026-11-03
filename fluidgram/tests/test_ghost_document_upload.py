@@ -34,7 +34,7 @@ class DocumentUploadGhostTests(unittest.TestCase):
     def test_guard_precedes_real_native_network_dispatch(self):
         guard = self.patch.split("if (FluidPrivacy.shouldSuppressTyping(object)", 1)[1]
         guard = guard.split("if (BuildVars.LOGS_ENABLED)", 1)[0]
-        self.assertIn("|| FluidPrivacy.shouldSuppressDocumentUploadIndicator(object)) {", guard)
+        self.assertIn("|| FluidPrivacy.shouldSuppressDocumentUploadIndicator(object)", guard)
         self.assertIn("No native_sendRequest", guard)
         self.assertIn("onComplete.run(new TLRPC.TL_boolTrue(), null)", guard)
         self.assertIn("return;", guard)

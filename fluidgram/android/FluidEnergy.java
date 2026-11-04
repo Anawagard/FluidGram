@@ -3,6 +3,8 @@ package org.telegram.ui;
 import android.app.Activity;
 import android.content.Context;
 import android.os.BatteryManager;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.SystemClock;
 import java.util.Locale;
 import java.util.WeakHashMap;
@@ -17,6 +19,8 @@ public final class FluidEnergy {
     private static long startedMs;
     private static long foregroundMs;
     private static int startedCharge = Integer.MIN_VALUE;
+    private static boolean startedUnplugged;
+    private static int skippedChargingSegments;
     private static long deltaUah;
     private static int measuredSegments;
     private static int completedSegments;
@@ -30,6 +34,14 @@ public final class FluidEnergy {
         return value > 0 ? value : Integer.MIN_VALUE;
     }
 
+    private static boolean unplugged(Context context) {
+        Intent battery = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+        if (battery == null) return false;
+        int plugged = battery.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
+        int status = battery.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
+        return plugged == 0 && status == BatteryManager.BATTERY_STATUS_DISCHARGING;
+    }
+
     private static int currentNow(Context context) {
         BatteryManager bm = (BatteryManager) context.getSystemService(Context.BATTERY_SERVICE);
         if (bm == null) return Integer.MIN_VALUE;
@@ -41,6 +53,7 @@ public final class FluidEnergy {
         if (visible.isEmpty()) {
             startedMs = SystemClock.elapsedRealtime();
             startedCharge = chargeCounter(activity);
+            startedUnplugged = unplugged(activity);
         }
         visible.put(activity, Boolean.TRUE);
     }
@@ -50,9 +63,13 @@ public final class FluidEnergy {
         if (!visible.isEmpty()) return;
         foregroundMs += Math.max(0L, SystemClock.elapsedRealtime() - startedMs);
         int end = chargeCounter(activity);
-        if (startedCharge != Integer.MIN_VALUE && end != Integer.MIN_VALUE) {
+        if (startedUnplugged && unplugged(activity)
+                && startedCharge != Integer.MIN_VALUE && end != Integer.MIN_VALUE
+                && startedCharge >= end) {
             deltaUah += (long) startedCharge - end;
             measuredSegments++;
+        } else {
+            skippedChargingSegments++;
         }
         completedSegments++;
         startedMs = 0L;
@@ -65,9 +82,11 @@ public final class FluidEnergy {
         deltaUah = 0L;
         measuredSegments = 0;
         completedSegments = 0;
+        skippedChargingSegments = 0;
         if (!visible.isEmpty()) {
             startedMs = SystemClock.elapsedRealtime();
             startedCharge = chargeCounter(context);
+            startedUnplugged = unplugged(context);
         }
     }
 
@@ -76,12 +95,17 @@ public final class FluidEnergy {
         long totalDelta = deltaUah;
         int samples = measuredSegments;
         int segments = completedSegments;
+        int skipped = skippedChargingSegments;
         if (!visible.isEmpty()) {
             activeMs += Math.max(0L, SystemClock.elapsedRealtime() - startedMs);
             int end = chargeCounter(context);
-            if (startedCharge != Integer.MIN_VALUE && end != Integer.MIN_VALUE) {
+            if (startedUnplugged && unplugged(context)
+                    && startedCharge != Integer.MIN_VALUE && end != Integer.MIN_VALUE
+                    && startedCharge >= end) {
                 totalDelta += (long) startedCharge - end;
                 samples++;
+            } else {
+                skipped++;
             }
             segments++;
         }
@@ -106,7 +130,7 @@ public final class FluidEnergy {
             out.append("Instantaneous device current: sensor unavailable\n");
         }
         out.append("These values cover the WHOLE PHONE, including other apps, radio and screen. ");
-        out.append("They do not isolate FluidGram battery use. No background sampling.");
+        out.append("They do not isolate FluidGram battery use. Charging or uncertain segments are excluded. No background sampling.");
         return out.toString();
     }
 }

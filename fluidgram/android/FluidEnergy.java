@@ -122,6 +122,7 @@ public final class FluidEnergy {
         }
         out.append("Charge-counter samples: ").append(samples).append("/")
                 .append(segments).append(" foreground segments\n");
+        out.append("Excluded charging/uncertain segments: ").append(skipped).append("\n");
         if (current != Integer.MIN_VALUE && current != 0) {
             out.append("Instantaneous device current: ")
                     .append(String.format(Locale.ROOT, "%+.0f", current / 1000.0))

@@ -322,6 +322,17 @@ public final class FluidLabsActivity extends Activity {
                 }
             }
         }
+        // App-only WireGuard cannot route Google Play Services FCM traffic.
+        // Warn without claiming that delivery is actually broken.
+        if (FluidVpnTunnel.isConnected()) {
+            report.append("Встроенный WireGuard: подключён, только FluidGram.\\n");
+            report.append("FCM обрабатывают Google Play Services вне VPN FluidGram. "
+                    + "Если сеть блокирует push, сравните доставку с системным VPN.\\n");
+        } else {
+            report.append("Встроенный WireGuard: не подключён.\\n");
+            report.append("Если сеть блокирует Telegram, без доступного прокси/VPN "
+                    + "сообщения и уведомления могут не доставляться.\\n");
+        }
         report.append("\nЭто проверка настроек, НЕ тест доставки push. ")
                 .append("Задержку FCM, соединения Telegram и ограничения автозапуска ColorOS ")
                 .append("Android не раскрывает через эти API. Сравните получение сообщения ")

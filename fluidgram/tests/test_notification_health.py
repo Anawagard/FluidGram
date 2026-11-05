@@ -36,6 +36,13 @@ class NotificationHealthTests(unittest.TestCase):
         self.assertIn("isIgnoringBatteryOptimizations(getPackageName())", report)
         self.assertIn("power.isPowerSaveMode()", report)
 
+    def test_split_tunnel_fcm_limitation_is_explained(self):
+        self.assertIn("FluidVpnTunnel.isConnected()", LABS)
+        self.assertIn("Google Play Services вне VPN FluidGram", LABS)
+        self.assertIn("сравните доставку с системным VPN", LABS)
+        self.assertIn("без доступного прокси/VPN", LABS)
+        self.assertNotIn("addDisallowedApplication", LABS)
+
     def test_no_push_suppression_or_background_polling(self):
         report = LABS.split("private String notificationHealthReport() {", 1)[1].split("\n    private void render()", 1)[0]
         for unsafe in ("WakeLock", "AlarmManager", "sendRequest", "setExact", "registerReceiver",

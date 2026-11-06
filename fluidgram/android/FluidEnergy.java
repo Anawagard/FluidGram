@@ -39,7 +39,8 @@ public final class FluidEnergy {
         if (battery == null) return false;
         int plugged = battery.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
         int status = battery.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
-        return plugged == 0 && status == BatteryManager.BATTERY_STATUS_DISCHARGING;
+        return plugged == 0 && (status == BatteryManager.BATTERY_STATUS_DISCHARGING
+                || status == BatteryManager.BATTERY_STATUS_NOT_CHARGING);
     }
 
     private static int currentNow(Context context) {

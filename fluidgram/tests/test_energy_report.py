@@ -8,6 +8,8 @@ class EnergyReportTests(unittest.TestCase):
     def test_charging_and_invalid_intervals_excluded(self):
         self.assertIn("Intent.ACTION_BATTERY_CHANGED", SOURCE)
         self.assertIn("BatteryManager.BATTERY_STATUS_DISCHARGING", SOURCE)
+        self.assertIn("BatteryManager.BATTERY_STATUS_NOT_CHARGING", SOURCE)
+        self.assertIn("plugged == 0 && (status ==", SOURCE)
         self.assertIn("startedUnplugged && unplugged(activity)", SOURCE)
         self.assertIn("startedUnplugged && unplugged(context)", SOURCE)
         self.assertIn("startedCharge >= end", SOURCE)

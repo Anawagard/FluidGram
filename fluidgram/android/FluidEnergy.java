@@ -22,6 +22,7 @@ public final class FluidEnergy {
     private static boolean startedUnplugged;
     private static int skippedChargingSegments;
     private static long deltaUah;
+    private static long measuredForegroundMs;
     private static int measuredSegments;
     private static int completedSegments;
 
@@ -68,6 +69,7 @@ public final class FluidEnergy {
                 && startedCharge != Integer.MIN_VALUE && end != Integer.MIN_VALUE
                 && startedCharge >= end) {
             deltaUah += (long) startedCharge - end;
+            measuredForegroundMs += Math.max(0L, SystemClock.elapsedRealtime() - startedMs);
             measuredSegments++;
         } else {
             skippedChargingSegments++;
@@ -81,6 +83,7 @@ public final class FluidEnergy {
     public static synchronized void reset(Context context) {
         foregroundMs = 0L;
         deltaUah = 0L;
+        measuredForegroundMs = 0L;
         measuredSegments = 0;
         completedSegments = 0;
         skippedChargingSegments = 0;
@@ -94,6 +97,7 @@ public final class FluidEnergy {
     public static synchronized String report(Context context) {
         long activeMs = foregroundMs;
         long totalDelta = deltaUah;
+        long validMs = measuredForegroundMs;
         int samples = measuredSegments;
         int segments = completedSegments;
         int skipped = skippedChargingSegments;
@@ -104,6 +108,7 @@ public final class FluidEnergy {
                     && startedCharge != Integer.MIN_VALUE && end != Integer.MIN_VALUE
                     && startedCharge >= end) {
                 totalDelta += (long) startedCharge - end;
+                validMs += Math.max(0L, SystemClock.elapsedRealtime() - startedMs);
                 samples++;
             } else {
                 skipped++;
@@ -114,12 +119,16 @@ public final class FluidEnergy {
         StringBuilder out = new StringBuilder();
         out.append("FluidGram Energy Lab — device-wide observations\n");
         out.append("Foreground time: ").append(activeMs / 1000L).append(" s\n");
-        if (samples > 0) {
+        if (samples > 0 && validMs > 0L) {
+            out.append("Valid measurement time: ").append(validMs / 1000L).append(" s\\n");
+            out.append("Approx. device discharge rate: ")
+                    .append(String.format(Locale.ROOT, "%.1f", totalDelta * 3.6 / validMs))
+                    .append(" mA (charge delta / valid time; NOT app-only)\\n");
             out.append("Battery charge change: ")
                     .append(String.format(Locale.ROOT, "%+.1f", totalDelta / 1000.0))
                     .append(" mAh (positive = discharge)\n");
         } else {
-            out.append("Battery charge change: sensor unavailable\n");
+            out.append("Battery charge change: no valid unplugged interval (or sensor unavailable)\n");
         }
         out.append("Charge-counter samples: ").append(samples).append("/")
                 .append(segments).append(" foreground segments\n");
@@ -132,7 +141,7 @@ public final class FluidEnergy {
             out.append("Instantaneous device current: sensor unavailable\n");
         }
         out.append("These values cover the WHOLE PHONE, including other apps, radio and screen. ");
-        out.append("They do not isolate FluidGram battery use. Charging or uncertain segments are excluded. No background sampling.");
+        out.append("They do not isolate FluidGram battery use. Charging or uncertain endpoints are excluded; charging between endpoint checks cannot be detected. No background sampling.");
         return out.toString();
     }
 }

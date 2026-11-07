@@ -16,6 +16,16 @@ class EnergyReportTests(unittest.TestCase):
         self.assertIn("skippedChargingSegments++", SOURCE)
         self.assertIn("Excluded charging/uncertain segments:", SOURCE)
 
+    def test_discharge_rate_uses_only_valid_interval_duration(self):
+        self.assertIn("measuredForegroundMs +=", SOURCE)
+        self.assertIn("validMs +=", SOURCE)
+        self.assertIn("totalDelta * 3600.0 / validMs", SOURCE)
+        self.assertIn("samples > 0 && validMs > 0L", SOURCE)
+        self.assertIn("NOT app-only", SOURCE)
+        self.assertIn("charging between endpoint checks cannot be detected", SOURCE)
+        # 1000 microamp-hours over one hour equals 1 milliamp.
+        self.assertAlmostEqual(1000 * 3600.0 / 3600000, 1.0)
+
     def test_no_periodic_background_sampling(self):
         for forbidden in ("WakeLock", "AlarmManager", "postDelayed", "Thread.sleep"):
             self.assertNotIn(forbidden, SOURCE)

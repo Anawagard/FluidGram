@@ -120,10 +120,10 @@ public final class FluidEnergy {
         out.append("FluidGram Energy Lab — device-wide observations\n");
         out.append("Foreground time: ").append(activeMs / 1000L).append(" s\n");
         if (samples > 0 && validMs > 0L) {
-            out.append("Valid measurement time: ").append(validMs / 1000L).append(" s\\n");
+            out.append("Valid measurement time: ").append(validMs / 1000L).append(" s\n");
             out.append("Approx. device discharge rate: ")
                     .append(String.format(Locale.ROOT, "%.1f", totalDelta * 3600.0 / validMs))
-                    .append(" mA (charge delta / valid time; NOT app-only)\\n");
+                    .append(" mA (charge delta / valid time; NOT app-only)\n");
             out.append("Battery charge change: ")
                     .append(String.format(Locale.ROOT, "%+.1f", totalDelta / 1000.0))
                     .append(" mAh (positive = discharge)\n");

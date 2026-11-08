@@ -27,8 +27,8 @@ class EnergyReportTests(unittest.TestCase):
         self.assertAlmostEqual(1000 * 3600.0 / 3600000, 1.0)
 
     def test_report_uses_actual_newlines_not_literal_backslash_n(self):
-        self.assertIn('append(" s\\n");', SOURCE)
-        self.assertIn('NOT app-only)\\n");', SOURCE)
+        self.assertIn(r'append(" s\n");', SOURCE)
+        self.assertIn(r'NOT app-only)\n");', SOURCE)
         self.assertNotIn(r'append(" s\\n");', SOURCE)
         self.assertNotIn(r'NOT app-only)\\n");', SOURCE)
 

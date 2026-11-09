@@ -127,7 +127,7 @@ FLUIDGLASS_COLORS = {
     "chat_outSentCheck": "#ff62F3DC",
     # Dark Blue preset: same attachment-sheet surfaces as light mode.
     "chat_attachActiveTab": "#ff62F3DC",
-    "chat_attachUnactiveTab": "#ffA4B8C7",
+    "chat_attachUnactiveTab": "#ffCADAE4",
     "chat_attachGalleryBackground": "#ff1F807D",
     "chat_attachAudioBackground": "#ffA85F71",
     "chat_attachPhotoBackground": "#1816A6A2",

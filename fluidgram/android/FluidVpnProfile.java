@@ -90,7 +90,7 @@ public final class FluidVpnProfile {
         String[] parts = address.split("\\.", -1);
         if (parts.length != 4) return false;
         for (String part : parts) {
-            if (part.isEmpty() || part.length() > 3) return false;
+            if (part.isEmpty() || part.length() > 3 || (part.length() > 1 && part.charAt(0) == '0')) return false;
             int value = 0;
             for (int i = 0; i < part.length(); i++) {
                 char c = part.charAt(i);

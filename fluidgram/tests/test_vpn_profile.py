@@ -19,6 +19,8 @@ public final class FluidVpnProfileSmoke {
         String src = profile();
         switch (mode) {
             case "bad": src = src.replace("PrivateKey", "NotAKey"); break;
+            case "bom": src = "\uFEFF" + src; break;
+            case "interiorbom": src = src.replace("Address = ", "\uFEFFAddress = "); break;
             case "badpadding": src = src.replace("B".repeat(42) + "A=", "B".repeat(43) + "="); break;
             case "large": src += "#" + "Z".repeat(66000); break;
             case "noendpoint": src = src.replace("Endpoint", "NotEndpoint"); break;
@@ -44,7 +46,7 @@ public final class FluidVpnProfileSmoke {
             case "badipv6address": src = src.replace("fd00::2/128", "fd00:::2/128"); break;
             case "multi": src += "[Peer]\nPublicKey = " + "C".repeat(42) + "A=\nEndpoint = peer.example:1234\nAllowedIPs = 10.0.0.0/8\n"; break;
         }
-        boolean valid = mode.equals("valid") || mode.equals("split") ||
+        boolean valid = mode.equals("valid") || mode.equals("bom") || mode.equals("split") ||
                 mode.equals("ipv4only") || mode.equals("ipv6only") ||
                 mode.equals("ipv6endpoint") || mode.equals("multi") ||
                 mode.equals("noipv6addr") || mode.equals("dnsdomain") || mode.equals("dnsipv6");
@@ -95,6 +97,8 @@ class WireGuardPreflight(unittest.TestCase):
         self.assertEqual(result.stdout.strip(), expected)
 
     def test_valid_profile_metadata_only(self): self.check(None, "OK")
+    def test_accept_utf8_bom_from_export(self): self.check("bom", "OK")
+    def test_reject_interior_bom(self): self.check("interiorbom", "REJECTED")
     def test_reject_missing_private_key(self): self.check("bad", "REJECTED")
     def test_reject_noncanonical_key_padding(self): self.check("badpadding", "REJECTED")
     def test_reject_oversized_profile(self): self.check("large", "REJECTED")

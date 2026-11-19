@@ -62,6 +62,9 @@ public final class FluidVpnProfile {
             if (length > MAX_CONFIG_BYTES)
                 throw new InvalidProfile("Файл превышает ограничение 64 КиБ");
             String source = new String(raw, 0, length, StandardCharsets.UTF_8);
+            // Some WireGuard exporters include a UTF-8 BOM at file start.
+            // Strip only the leading marker; do not alter profile contents.
+            if (source.startsWith("\uFEFF")) source = source.substring(1);
             if (source.indexOf('\u0000') >= 0 || source.indexOf('\uFFFD') >= 0)
                 throw new InvalidProfile("Неподдерживаемый формат файла");
             return parse(source);

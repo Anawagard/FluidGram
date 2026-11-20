@@ -259,7 +259,7 @@ public final class FluidVpnProfile {
                         if (!validNumber(value, 65535)) throw new InvalidProfile("Некорректный ListenPort");
                         break;
                     case "mtu":
-                        if (!validNumber(value, 65535)) throw new InvalidProfile("Некорректный MTU");
+                        if (!validNumber(value, 65535) || Integer.parseInt(value) == 0) throw new InvalidProfile("Некорректный MTU");
                         break;
                     default:
                         throw new InvalidProfile("Неподдерживаемый параметр Interface");

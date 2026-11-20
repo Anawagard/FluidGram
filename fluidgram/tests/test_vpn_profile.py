@@ -30,6 +30,8 @@ public final class FluidVpnProfileSmoke {
             case "badroute": src = src.replace("0.0.0.0/0, ::/0", "999.2.3.4/55"); break;
             case "badaddress": src = src.replace("10.1.2.3/32", "10.1.2.999/32"); break;
             case "badport": src = src.replace(":51820", ":65536"); break;
+            case "mtu": src = src.replace("DNS = 1.1.1.1", "DNS = 1.1.1.1\nMTU = 1280"); break;
+            case "zeromtu": src = src.replace("DNS = 1.1.1.1", "DNS = 1.1.1.1\nMTU = 0"); break;
             case "badipv6": src = src.replace("::/0", "2001:db8::g/64"); break;
             case "badipv6endpoint": src = src.replace("example.com:51820", "[2001:db8::g]:51820"); break;
             case "badipv6colon": src = src.replace("example.com:51820", "[1:2:3:4:5:6:7:8:]:51820"); break;
@@ -46,7 +48,7 @@ public final class FluidVpnProfileSmoke {
             case "badipv6address": src = src.replace("fd00::2/128", "fd00:::2/128"); break;
             case "multi": src += "[Peer]\nPublicKey = " + "C".repeat(42) + "A=\nEndpoint = peer.example:1234\nAllowedIPs = 10.0.0.0/8\n"; break;
         }
-        boolean valid = mode.equals("valid") || mode.equals("bom") || mode.equals("split") ||
+        boolean valid = mode.equals("valid") || mode.equals("bom") || mode.equals("mtu") || mode.equals("split") ||
                 mode.equals("ipv4only") || mode.equals("ipv6only") ||
                 mode.equals("ipv6endpoint") || mode.equals("multi") ||
                 mode.equals("noipv6addr") || mode.equals("dnsdomain") || mode.equals("dnsipv6");
@@ -109,6 +111,8 @@ class WireGuardPreflight(unittest.TestCase):
     def test_reject_invalid_allowed_ips(self): self.check("badroute", "REJECTED")
     def test_reject_invalid_interface_address(self): self.check("badaddress", "REJECTED")
     def test_reject_invalid_endpoint_port(self): self.check("badport", "REJECTED")
+    def test_accept_positive_mtu(self): self.check("mtu", "OK")
+    def test_reject_zero_mtu(self): self.check("zeromtu", "REJECTED")
     def test_reject_invalid_ipv6_route(self): self.check("badipv6", "REJECTED")
     def test_reject_invalid_ipv6_endpoint(self): self.check("badipv6endpoint", "REJECTED")
     def test_reject_trailing_colon_ipv6(self): self.check("badipv6colon", "REJECTED")

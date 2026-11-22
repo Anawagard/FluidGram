@@ -32,6 +32,8 @@ public final class FluidVpnProfileSmoke {
             case "badport": src = src.replace(":51820", ":65536"); break;
             case "mtu": src = src.replace("DNS = 1.1.1.1", "DNS = 1.1.1.1\nMTU = 1280"); break;
             case "zeromtu": src = src.replace("DNS = 1.1.1.1", "DNS = 1.1.1.1\nMTU = 0"); break;
+            case "keepalive": src = src.replace("AllowedIPs = 0.0.0.0/0, ::/0", "AllowedIPs = 0.0.0.0/0, ::/0\nPersistentKeepalive = 25"); break;
+            case "duplicatekeepalive": src = src.replace("AllowedIPs = 0.0.0.0/0, ::/0", "AllowedIPs = 0.0.0.0/0, ::/0\nPersistentKeepalive = 25\nPersistentKeepalive = 30"); break;
             case "duplicatemtu": src = src.replace("DNS = 1.1.1.1", "DNS = 1.1.1.1\nMTU = 1280\nMTU = 1420"); break;
             case "badipv6": src = src.replace("::/0", "2001:db8::g/64"); break;
             case "badipv6endpoint": src = src.replace("example.com:51820", "[2001:db8::g]:51820"); break;
@@ -51,7 +53,7 @@ public final class FluidVpnProfileSmoke {
         }
         boolean valid = mode.equals("valid") || mode.equals("bom") || mode.equals("mtu") || mode.equals("split") ||
                 mode.equals("ipv4only") || mode.equals("ipv6only") ||
-                mode.equals("ipv6endpoint") || mode.equals("multi") ||
+                mode.equals("ipv6endpoint") || mode.equals("multi") || mode.equals("keepalive") ||
                 mode.equals("noipv6addr") || mode.equals("dnsdomain") || mode.equals("dnsipv6");
         try {
             FluidVpnProfile.Info info = FluidVpnProfile.inspect(new ByteArrayInputStream(src.getBytes(StandardCharsets.UTF_8)));
@@ -115,6 +117,8 @@ class WireGuardPreflight(unittest.TestCase):
     def test_accept_positive_mtu(self): self.check("mtu", "OK")
     def test_reject_zero_mtu(self): self.check("zeromtu", "REJECTED")
     def test_reject_duplicate_mtu(self): self.check("duplicatemtu", "REJECTED")
+    def test_accept_single_peer_keepalive(self): self.check("keepalive", "OK")
+    def test_reject_duplicate_peer_keepalive(self): self.check("duplicatekeepalive", "REJECTED")
     def test_reject_invalid_ipv6_route(self): self.check("badipv6", "REJECTED")
     def test_reject_invalid_ipv6_endpoint(self): self.check("badipv6endpoint", "REJECTED")
     def test_reject_trailing_colon_ipv6(self): self.check("badipv6colon", "REJECTED")

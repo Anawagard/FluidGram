@@ -203,7 +203,7 @@ public final class FluidVpnProfile {
         boolean ipv4Address = false, ipv6Address = false;
         boolean ipv4Default = false, ipv6Default = false;
         boolean peerKey = false, peerRoutes = false, peerEndpoint = false;
-        boolean seenInterface = false, seenDns = false, seenPreshared = false, seenMtu = false;
+        boolean seenInterface = false, seenDns = false, seenPreshared = false, seenMtu = false, seenKeepalive = false;
         int peers = 0;
         for (String rawLine : source.replace("\r", "").split("\n", -1)) {
             String line = rawLine.trim();
@@ -224,7 +224,7 @@ public final class FluidVpnProfile {
                 if ("peer".equals(next) && (!privateKey || !address))
                     throw new InvalidProfile("Раздел Interface должен идти первым");
                 section = next;
-                peerKey = peerRoutes = peerEndpoint = seenPreshared = false;
+                peerKey = peerRoutes = peerEndpoint = seenPreshared = seenKeepalive = false;
                 continue;
             }
             int eq = line.indexOf('=');
@@ -296,7 +296,8 @@ public final class FluidVpnProfile {
                         peerRoutes = true;
                         break;
                     case "persistentkeepalive":
-                        if (!validNumber(value, 65535)) throw new InvalidProfile("Некорректный PersistentKeepalive");
+                        if (seenKeepalive || !validNumber(value, 65535)) throw new InvalidProfile("Некорректный PersistentKeepalive");
+                        seenKeepalive = true;
                         break;
                     default:
                         throw new InvalidProfile("Неподдерживаемый параметр Peer");

@@ -30,6 +30,9 @@ public final class FluidVpnProfileSmoke {
             case "badroute": src = src.replace("0.0.0.0/0, ::/0", "999.2.3.4/55"); break;
             case "badaddress": src = src.replace("10.1.2.3/32", "10.1.2.999/32"); break;
             case "badport": src = src.replace(":51820", ":65536"); break;
+            case "listenport": src = src.replace("DNS = 1.1.1.1", "DNS = 1.1.1.1\nListenPort = 51820"); break;
+            case "zerolistenport": src = src.replace("DNS = 1.1.1.1", "DNS = 1.1.1.1\nListenPort = 0"); break;
+            case "duplicatelistenport": src = src.replace("DNS = 1.1.1.1", "DNS = 1.1.1.1\nListenPort = 51820\nListenPort = 51821"); break;
             case "mtu": src = src.replace("DNS = 1.1.1.1", "DNS = 1.1.1.1\nMTU = 1280"); break;
             case "zeromtu": src = src.replace("DNS = 1.1.1.1", "DNS = 1.1.1.1\nMTU = 0"); break;
             case "keepalive": src = src.replace("AllowedIPs = 0.0.0.0/0, ::/0", "AllowedIPs = 0.0.0.0/0, ::/0\nPersistentKeepalive = 25"); break;
@@ -53,7 +56,7 @@ public final class FluidVpnProfileSmoke {
         }
         boolean valid = mode.equals("valid") || mode.equals("bom") || mode.equals("mtu") || mode.equals("split") ||
                 mode.equals("ipv4only") || mode.equals("ipv6only") ||
-                mode.equals("ipv6endpoint") || mode.equals("multi") || mode.equals("keepalive") ||
+                mode.equals("ipv6endpoint") || mode.equals("multi") || mode.equals("keepalive") || mode.equals("listenport") ||
                 mode.equals("noipv6addr") || mode.equals("dnsdomain") || mode.equals("dnsipv6");
         try {
             FluidVpnProfile.Info info = FluidVpnProfile.inspect(new ByteArrayInputStream(src.getBytes(StandardCharsets.UTF_8)));
@@ -114,6 +117,9 @@ class WireGuardPreflight(unittest.TestCase):
     def test_reject_invalid_allowed_ips(self): self.check("badroute", "REJECTED")
     def test_reject_invalid_interface_address(self): self.check("badaddress", "REJECTED")
     def test_reject_invalid_endpoint_port(self): self.check("badport", "REJECTED")
+    def test_accept_listen_port(self): self.check("listenport", "OK")
+    def test_reject_zero_listen_port(self): self.check("zerolistenport", "REJECTED")
+    def test_reject_duplicate_listen_port(self): self.check("duplicatelistenport", "REJECTED")
     def test_accept_positive_mtu(self): self.check("mtu", "OK")
     def test_reject_zero_mtu(self): self.check("zeromtu", "REJECTED")
     def test_reject_duplicate_mtu(self): self.check("duplicatemtu", "REJECTED")

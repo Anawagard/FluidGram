@@ -203,7 +203,7 @@ public final class FluidVpnProfile {
         boolean ipv4Address = false, ipv6Address = false;
         boolean ipv4Default = false, ipv6Default = false;
         boolean peerKey = false, peerRoutes = false, peerEndpoint = false;
-        boolean seenInterface = false, seenDns = false, seenPreshared = false, seenMtu = false, seenKeepalive = false;
+        boolean seenInterface = false, seenDns = false, seenPreshared = false, seenMtu = false, seenListenPort = false, seenKeepalive = false;
         int peers = 0;
         for (String rawLine : source.replace("\r", "").split("\n", -1)) {
             String line = rawLine.trim();
@@ -256,7 +256,8 @@ public final class FluidVpnProfile {
                         seenDns = dns = true;
                         break;
                     case "listenport":
-                        if (!validNumber(value, 65535)) throw new InvalidProfile("Некорректный ListenPort");
+                        if (seenListenPort || !validNumber(value, 65535) || Integer.parseInt(value) == 0) throw new InvalidProfile("Некорректный ListenPort");
+                        seenListenPort = true;
                         break;
                     case "mtu":
                         if (seenMtu || !validNumber(value, 65535) || Integer.parseInt(value) == 0) throw new InvalidProfile("Некорректный MTU");
